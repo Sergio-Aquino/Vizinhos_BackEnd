@@ -1,5 +1,6 @@
 import boto3
 import os
+import json
 
 def lambda_handler(event: any, context: any):
     dynamodb = boto3.resource('dynamodb')
@@ -10,12 +11,12 @@ def lambda_handler(event: any, context: any):
     except Exception as ex:
         return {
             "statusCode": 500,
-            "body": "Erro ao buscar categorias: " + str(ex)
+            "body": json.dumps({"message":"Erro ao buscar categorias: " + str(ex)}, default=str)
         }
 
     return {
         "statusCode": 200,
-        "body": all_categories['Items']
+        "body": json.dumps({"categorias":all_categories['Items']}, default=str)
     }
 
 if __name__ == "__main__":

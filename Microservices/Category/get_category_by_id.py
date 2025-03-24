@@ -1,33 +1,45 @@
+import json
 import boto3
 import os
 
-def lambda_handler(event: any, context: any):
+def lambda_handler(event:any, context:any):
+    category_id = event.get("queryStringParameters", {}).get("id_Categoria")
+    if not category_id:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"message":"O parâmetro 'id_Categoria' é obrigatório!"}, default=str)
+        }
+
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table(os.environ['TABLE_NAME'])
-    category_id = event['id_Categoria']
 
     try:
-        response = table.get_item(Key={'id_Categoria': category_id})
+        response = table.get_item(Key={'id_Categoria': int(category_id)})
         if 'Item' not in response:
             return {
                 "statusCode": 404,
-                "body": "Categoria não encontrada!"
+                "body": json.dumps({"message":"Categoria não encontrada!"}) 
             }
-        category = table.get_item(Key={'id_Categoria': category_id})
+
+        return {
+            "statusCode": 200,
+            "body": json.dumps(response['Item'], default=str)
+        }
+
     except Exception as ex:
         return {
             "statusCode": 500,
-            "body": "Erro ao buscar categoria: " + str(ex)
+            "body": json.dumps({"message":"Erro ao buscar categoria: " + str(ex)}, default=str)
         }
-    
-    return {
-        "statusCode": 200,
-        "body": category['Item']
-    }
+
+
 
 if __name__ == "__main__":
     os.environ['TABLE_NAME'] = 'Categoria'
+
     event = {
-        "id_Categoria": 418
+        "queryStringParameters": {
+            "id_Categoria": "55"
+        }
     }
     print(lambda_handler(event, None))
