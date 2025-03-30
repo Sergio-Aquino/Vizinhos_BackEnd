@@ -22,7 +22,7 @@ def lambda_handler(event:any, context:any):
     table = dynamodb.Table(os.environ['TABLE_NAME'])
     
     try:
-        response = table.get_item(Key={'id_Caracteristica': int(characteristic_id)})
+        response = table.get_item(Key={'id_Caracteristica': characteristic_id})
         if 'Item' not in response:
             return {
                 "statusCode": 404,
@@ -30,7 +30,7 @@ def lambda_handler(event:any, context:any):
             }
         
         table.update_item(
-            Key={'id_Caracteristica': int(characteristic_id)},
+            Key={'id_Caracteristica': characteristic_id},
             UpdateExpression="SET descricao = :descricao",
             ExpressionAttributeValues={
                 ':descricao': new_characteristic_description

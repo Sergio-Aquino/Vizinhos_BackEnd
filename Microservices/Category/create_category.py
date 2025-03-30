@@ -1,7 +1,7 @@
-import random
 import boto3
 import os
 import json
+import uuid
 
 def lambda_handler(event: any, context: any):
     category_description = json.loads(event['body'])['descricao'] if 'descricao' in json.loads(event['body']) else None
@@ -11,7 +11,7 @@ def lambda_handler(event: any, context: any):
             "body": json.dumps({"message":"Descrição não informada!"}, default=str)
         }
 
-    category_id = random.randint(1, 1000) 
+    category_id = int(str((uuid.uuid4().int))[:18])
 
     dynamodb = boto3.resource('dynamodb')
     table = dynamodb.Table(os.environ['TABLE_NAME'])
