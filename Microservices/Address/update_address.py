@@ -1,6 +1,8 @@
 import json
 import boto3
 import os
+import re
+import requests
 
 def create_address_for_customer(address_id, cep, logradouro, numero, complemento):
     try:
@@ -16,6 +18,11 @@ def create_address_for_customer(address_id, cep, logradouro, numero, complemento
                 ':numero': numero,
                 ':complemento': complemento
             }
+        )
+
+        table.update_item(
+            Key={'id_Endereco': address_id},
+            UpdateExpression="REMOVE nome_Loja, descricao_Loja, id_Imagem, tipo_Entrega"
         )
 
         return {
@@ -85,6 +92,20 @@ def create_address_for_seller_or_customer_seller(address_id, cep, logradouro, nu
             'statusCode': 500,
             'body': json.dumps({'message':'Erro ao criar endereço: ' + str(ex)}, default=str)
         }
+    
+def validate_cep(cep):
+    try:
+        response = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
+        if response.status_code != 200 or 'erro' in response.json():
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': 'CEP não encontrado'}, default=str)
+            }
+    except Exception as ex:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'message': 'Erro ao validar o CEP: ' + str(ex)}, default=str)
+        }
 
 
 def lambda_handler(event:any, context:any):
@@ -101,6 +122,17 @@ def lambda_handler(event:any, context:any):
             'statusCode': 400,
             'body': json.dumps({'message':'CEP não informado'}, default=str)
         }
+    
+    cep = re.sub(r'\D', '', cep) 
+    if not re.match(r'^\d{8}$', cep):
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': 'Formatação de CEP inválida'}, default=str)
+        }
+    
+    response = validate_cep(cep)
+    if response:
+        return response
     
     logradouro = json.loads(event['body'])['logradouro'] if 'logradouro' in json.loads(event['body']) else None
     if not logradouro:
@@ -147,14 +179,14 @@ if __name__ == "__main__":
     os.environ['TABLE_NAME'] = 'Loja_Endereco'
     event = {
         "body": json.dumps({
-            "id_Endereco": 300763759403059632,
-            "cep": "40028922",
-            "logradouro": "Rua ataulizar rua seller_customer",
+            "id_Endereco": 119167726240794955,
+            "cep": "08583620",
+            "logradouro": "Rua ataulizar rua customer",
             "numero": 127,
-            "complemento": "Apto 1 update seller_customer",
-            "user_type": "seller",
+            "complemento": "Apto 1 update customer",
+            "user_type": "seller_customer",
             "nome_Loja": "Loja Teste update",
-            "descricao_Loja": "Descrição da loja teste update seller_customer",
+            "descricao_Loja": "Descrição da loja teste update customer",
             "id_Imagem": "https://us-east-2.console.aws.amazon.com/s3/object/loja-profile-pictures?region=us-east-2&bucketType=general&prefix=37dc297e-527b-4744-8f00-95a3bb4d25dd.jpg",
             "tipo_Entrega": "Entrega rápida"
         })
