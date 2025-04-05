@@ -2,6 +2,8 @@ import json
 import os
 import uuid
 import boto3
+import re
+import requests
 
 
 def create_address_for_customer(cep, logradouro, numero, complemento):
@@ -86,6 +88,20 @@ def create_address_for_seller_or_customer_seller(cep, logradouro, numero, comple
             'body': json.dumps({'message':'Erro ao criar endereço da loja: ' + str(ex)}, default=str)
         }
     
+def validate_cep(cep):
+    try:
+        response = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
+        if response.status_code != 200 or 'erro' in response.json():
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': 'CEP não encontrado'}, default=str)
+            }
+    except Exception as ex:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'message': 'Erro ao validar o CEP: ' + str(ex)}, default=str)
+        }
+    
 
 def lambda_handler(event:any, context:any): 
     cep = json.loads(event['body'])['cep'] if 'cep' in json.loads(event['body']) else None
@@ -94,6 +110,17 @@ def lambda_handler(event:any, context:any):
             'statusCode': 400,
             'body': json.dumps({'message':'CEP não informado'}, default=str)
         }
+    
+    cep = re.sub(r'\D', '', cep) 
+    if not re.match(r'^\d{8}$', cep):
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': 'Formatação de CEP inválida'}, default=str)
+        }
+    
+    response = validate_cep(cep)
+    if response:
+        return response
     
     logradouro = json.loads(event['body'])['logradouro'] if 'logradouro' in json.loads(event['body']) else None
     if not logradouro:
@@ -140,15 +167,15 @@ if __name__ == "__main__":
     os.environ['TABLE_NAME'] = 'Loja_Endereco'
     event = {
         "body": json.dumps({
-            "cep": "meu_cep",
-            "logradouro": "Rua Teste customer",
-            "numero": 123,
-            "complemento": "Apto 3",
-            "user_type": "customer",
-            "nome_Loja": "Loja Teste seller_customer",
-            "descricao_Loja": "Descrição da loja teste seller_customer",
+            "cep": "08583620",
+            "logradouro": "logradouro sergio",
+            "numero": 43,
+            "complemento": "casa 1",
+            "user_type": "seller",
+            "nome_Loja": "loja do sergio",
+            "descricao_Loja": "descricao da loja do sergio",
             "id_Imagem": "https://us-east-2.console.aws.amazon.com/s3/object/loja-profile-pictures?region=us-east-2&bucketType=general&prefix=37dc297e-527b-4744-8f00-95a3bb4d25dd.jpg",
-            "tipo_Entrega": "Entrega rápida seller_customer"
+            "tipo_Entrega": "entrega feita por mim"
         })
     }
     print(lambda_handler(event, None))
