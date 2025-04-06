@@ -4,6 +4,13 @@ import boto3
 import os
 
 def lambda_handler(event:any, context:any):
+    name = json.loads(event['body'])['nome'] if 'nome' in json.loads(event['body']) else None
+    if not name:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message':'Nome não informado'}, default=str)
+        }
+
     cpf = json.loads(event['body'])['cpf'] if 'cpf' in json.loads(event['body']) else None
     if not cpf:
         return {
@@ -61,6 +68,7 @@ def lambda_handler(event:any, context:any):
 
         table.put_item(
             Item={
+                'nome': name,
                 'cpf': cpf,
                 'Usuario_Tipo': user_type,
                 'fk_id_Endereco': id_address,
@@ -88,6 +96,7 @@ if __name__ == "__main__":
 
     event = {
         "body": json.dumps({
+            "nome": "Sergio",
             "cpf": "25563678512",
             "Usuario_Tipo": "customer",
             "fk_id_Endereco": 199297594630771120,
