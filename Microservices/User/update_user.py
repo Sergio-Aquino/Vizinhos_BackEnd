@@ -77,7 +77,7 @@ if __name__ == "__main__":
     event = {
         "body": json.dumps({
             "nome": "Aquino Lima",
-            "cpf": "25563678512",
+            "cpf": "488.121.728-30",
             "Usuario_Tipo": "seller",
             "fk_id_Endereco": 123456789,
             "telefone": "40028922",

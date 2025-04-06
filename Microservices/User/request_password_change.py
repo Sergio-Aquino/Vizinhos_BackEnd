@@ -18,7 +18,7 @@ def lambda_handler(event:any, context:any):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({'message':'Email enviado com sucesso'}, default=str)
+            'body': json.dumps({'message':'Email  de troca de senha enviado com sucesso'}, default=str)
         }
     except Exception as ex:
         return {
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     os.environ['USER_POOL_ID'] = 'us-east-2_K0dp1BUPW'
     event = {
         "body": json.dumps({
-            "email": "sergioadm120@gmail.com"
+            "email": "aquino.lima@aluno.ifsp.edu.br"
         })
     }
     print(lambda_handler(event, None))

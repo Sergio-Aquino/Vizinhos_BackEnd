@@ -2,6 +2,7 @@ import json
 import datetime
 import boto3
 import os
+import re
 
 def lambda_handler(event:any, context:any):
     name = json.loads(event['body'])['nome'] if 'nome' in json.loads(event['body']) else None
@@ -16,6 +17,13 @@ def lambda_handler(event:any, context:any):
         return {
             'statusCode': 400,
             'body': json.dumps({'message':'CPF não informado'}, default=str)
+        }
+    
+    cpf = re.sub(r'\D', '', cpf) 
+    if not re.match(r'^\d{11}$', cpf):
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': 'Formatação de CPF inválida'}, default=str)
         }
     
     user_type = json.loads(event['body'])['Usuario_Tipo'] if 'Usuario_Tipo' in json.loads(event['body']) else None
@@ -97,11 +105,11 @@ if __name__ == "__main__":
     event = {
         "body": json.dumps({
             "nome": "Sergio",
-            "cpf": "25563678512",
+            "cpf": "588.851.245.-40",
             "Usuario_Tipo": "customer",
             "fk_id_Endereco": 199297594630771120,
             "telefone": "1234567890",
-            "email": "sergioadm120@gmail.com",
+            "email": "aquino.lima@aluno.ifsp.edu.br",
             "senha": "MinhaSenha123#"
         })
     }
