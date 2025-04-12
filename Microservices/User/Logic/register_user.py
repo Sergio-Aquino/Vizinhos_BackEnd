@@ -5,7 +5,17 @@ from dataclasses import dataclass
 import boto3
 import os
 import uuid
+import requests
 
+
+def validate_cep(cep:str):
+    try:
+        response = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
+        if response.status_code != 200 or 'erro' in response.json():
+            raise ValueError('CEP não encontrado')
+    except Exception as ex:
+        raise Exception(str(ex))
+    
 @dataclass
 class User:
     nome: str
@@ -18,7 +28,18 @@ class User:
     fk_id_Endereco: int = None
 
     @staticmethod
-    def from_json(json_data: dict) -> 'User':
+    def from_json(json_data: dict) -> 'User':        
+        if not isinstance(json_data['nome'], str):
+            raise TypeError('nome deve ser uma string')
+        if not isinstance(json_data['cpf'], str):
+            raise TypeError('cpf deve ser uma string')
+        if not isinstance(json_data['Usuario_Tipo'], str):
+            raise TypeError('Usuario_Tipo deve ser uma string')
+        if not isinstance(json_data['telefone'], str):
+            raise TypeError('telefone deve ser uma string')
+        if not isinstance(json_data['email'], str):
+            raise TypeError('email deve ser uma string')
+            
         json_data['cpf'] = re.sub(r'\D', '', json_data.get('cpf', ''))
         if not re.match(r'^\d{11}$', json_data['cpf']):
             raise ValueError('Formatação de CPF inválida')
@@ -38,29 +59,67 @@ class Address_Store:
     logradouro: str
     numero: str
     complemento: str
-    nome_Loja: str
-    descricao_Loja: str
-    id_Imagem: str
-    tipo_Entrega: str
-    id_Endereco: int = int(str((uuid.uuid4().int))[:18])
+    nome_Loja: str = None
+    descricao_Loja: str = None
+    id_Imagem: str = None
+    tipo_Entrega: str = None
+    id_Endereco: int = None
 
     @staticmethod
     def from_json(json_data: dict):
+        if 'cep' not in json_data:
+            raise KeyError('cep')
+        
+        if not isinstance(json_data['cep'], str):
+            raise TypeError('cep deve ser uma string')
+        
         json_data['cep'] = re.sub(r'\D', '', json_data.get('cep', ''))
         if not re.match(r'^\d{8}$', json_data['cep']):
             raise ValueError('Formatação de CEP inválida')
-
-        return Address_Store(
-            cep=json_data['cep'],
-            logradouro=json_data['logradouro'],
-            numero=json_data['numero'],
-            complemento=json_data['complemento'],
-            id_Endereco=int(str((uuid.uuid4().int))[:18]),
-            nome_Loja=json_data.get('nome_Loja', None),
-            descricao_Loja=json_data.get('descricao_Loja', None),
-            id_Imagem=json_data.get('id_Imagem', None),
-            tipo_Entrega=json_data.get('tipo_Entrega', None)
-        )
+        
+        validate_cep(json_data['cep'])
+        
+        user_type = json_data['Usuario_Tipo']
+        if user_type not in ['seller', 'customer', 'seller_customer']:
+            raise ValueError('Tipo de usuário inválido')
+        
+        if not isinstance(json_data['logradouro'], str):
+            raise TypeError('logradouro deve ser uma string')
+        if not isinstance(json_data['numero'], str):
+            raise TypeError('numero deve ser uma string')
+        if not isinstance(json_data['complemento'], str):
+            raise TypeError('complemento deve ser uma string')
+        
+        if json_data['Usuario_Tipo'] == 'customer':
+            return Address_Store(
+                cep=json_data['cep'],
+                logradouro=json_data['logradouro'],
+                numero=json_data['numero'],
+                complemento=json_data['complemento'],
+                id_Endereco=int(str((uuid.uuid4().int))[:18]),
+            )
+        else:
+            if not isinstance(json_data['nome_Loja'], str):
+                raise TypeError('nome_Loja deve ser uma string')
+            if not isinstance(json_data['descricao_Loja'], str):
+                raise TypeError('descricao_Loja deve ser uma string')
+            if not isinstance(json_data['id_Imagem'], str):
+                raise TypeError('id_Imagem deve ser uma string')
+            if not isinstance(json_data['tipo_Entrega'], str):
+                raise TypeError('tipo_Entrega deve ser uma string')
+            
+            return Address_Store(
+                cep=json_data['cep'],
+                logradouro=json_data['logradouro'],
+                numero=json_data['numero'],
+                complemento=json_data['complemento'],
+                id_Endereco=int(str((uuid.uuid4().int))[:18]),
+                nome_Loja=json_data['nome_Loja'],
+                descricao_Loja=json_data['descricao_Loja'],
+                id_Imagem=json_data['id_Imagem'],
+                tipo_Entrega=json_data['tipo_Entrega']
+            )
+        
 
 def lambda_handler(event:any, context:any): 
         try:
@@ -99,6 +158,13 @@ def lambda_handler(event:any, context:any):
             address_store_table.put_item(Item=address_store_item)
 
             user_table = dynamodb.Table(os.environ['USER_TABLE'])
+
+            if 'Item' in user_table.get_item(Key={'cpf': user.cpf}):
+                address_store_table.delete_item(
+                    Key={'id_Endereco': address_store.id_Endereco}
+                )
+                raise ValueError('CPF já cadastrado')
+
             user_table.put_item(
                 Item={
                     'nome': user.nome,
@@ -113,7 +179,12 @@ def lambda_handler(event:any, context:any):
 
             return {
                 'statusCode': 200,
-                'body': json.dumps({'message': 'Registro criado com sucesso!'}, default=str)
+                'body': json.dumps(
+                    {
+                        'message': 'Registro criado com sucesso!',
+                        "cpf": user.cpf,
+                        "id_Endereco": user.fk_id_Endereco,
+                    }, default=str)
             }
 
         except KeyError as err:
@@ -122,6 +193,11 @@ def lambda_handler(event:any, context:any):
                 'body': json.dumps({'message': f'Campo obrigatório não informado: {str(err)}'}, default=str)
             }
         except ValueError as err:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': str(err)}, default=str)
+            }
+        except TypeError as err:
             return {
                 'statusCode': 400,
                 'body': json.dumps({'message': str(err)}, default=str)
@@ -140,20 +216,20 @@ if __name__ == "__main__":
 
     event = {
         "body": json.dumps({
-            "nome": "Sergio",
-            "cpf": "686.451.145-70",
-            "Usuario_Tipo": "seller",
+            "nome": "Sergio Gabriel",
+             "cpf": "12345678901",
+            "Usuario_Tipo": "customer",
             "telefone": "1234567890",
-            "email": "aquino.lima@aluno.ifsp.edu.br",
+            "email": "sergioadm120@gmail.com",
             "senha": "MinhaSenha123#",
-            "cep": "12345678",
-            "logradouro": "Rua Teste 2",
-            "numero": "1234",
+            "cep": "08583620",
+            "logradouro": "Rua das Flores",
+            "numero": "12",
             "complemento": "Apto 102",
-            "nome_Loja": "Loja Teste",
-            "descricao_Loja": "Descrição da loja teste",
+            "nome_Loja": "loja do sergio",
+            "descricao_Loja": "descricao da loja do sergio",
             "id_Imagem": "https://us-east-2.console.aws.amazon.com/s3/object/loja-profile-pictures?region=us-east-2&bucketType=general&prefix=37dc297e-527b-4744-8f00-95a3bb4d25dd.jpg",
-            "tipo_Entrega": "Entrega rápida"
+            "tipo_Entrega": "entrega feita por mim"
         })
     }
     print(lambda_handler(event, None))

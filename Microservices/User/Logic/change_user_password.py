@@ -3,29 +3,33 @@ import boto3
 import os
 
 def lambda_handler(event, context):
-    email = json.loads(event['body']).get('email')
-    confirmation_code = json.loads(event['body']).get('confirmation_code')
-    new_password = json.loads(event['body']).get('new_password')
-
-    if not email:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'message': 'Email não informado'}, default=str)
-        }
-
-    if not confirmation_code:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'message': 'Código de confirmação para troca de senha não informado'}, default=str)
-        }
-
-    if not new_password:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({'message': 'Nova senha não informada'}, default=str)
-        }
-
     try:
+        email = json.loads(event['body']).get('email')
+        confirmation_code = json.loads(event['body']).get('confirmation_code')
+        new_password = json.loads(event['body']).get('new_password')
+
+        if not email:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': 'Email não informado'}, default=str)
+            }
+        
+        if not isinstance(email, str): 
+            raise TypeError("Email deve ser uma string")
+        
+
+        if not confirmation_code:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': 'Código de confirmação para troca de senha não informado'}, default=str)
+            }
+
+        if not new_password:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': 'Nova senha não informada'}, default=str)
+            }
+        
         cognito = boto3.client('cognito-idp')
 
         cognito.confirm_forgot_password(
@@ -40,6 +44,11 @@ def lambda_handler(event, context):
             'body': json.dumps({'message': 'Senha redefinida com sucesso!'}, default=str)
         }
 
+    except TypeError as err:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': str(err)}, default=str)
+        }
     except Exception as ex:
         return {
             'statusCode': 500,

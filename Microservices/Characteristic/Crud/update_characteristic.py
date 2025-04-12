@@ -3,30 +3,24 @@ import boto3
 import os
 
 def lambda_handler(event:any, context:any):
-    characteristic_id = json.loads(event['body'])['id_Caracteristica'] if 'id_Caracteristica' in json.loads(event['body']) else None
-    new_characteristic_description = json.loads(event['body'])['descricao'] if 'descricao' in json.loads(event['body']) else None
-
-    if not characteristic_id:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"message":"ID da característica não informado!"}, default=str)
-        }
-    
-    if not new_characteristic_description:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"message":"Descrição da característica não informada!"}, default=str)
-        }
-    
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table(os.environ['TABLE_NAME'])
-    
     try:
+        characteristic_id = json.loads(event['body'])['id_Caracteristica'] if 'id_Caracteristica' in json.loads(event['body']) else None
+        new_characteristic_description = json.loads(event['body'])['descricao'] if 'descricao' in json.loads(event['body']) else None
+
+        if not characteristic_id:
+            raise ValueError("id_Caracteristica não fornecido.")
+        
+        if not new_characteristic_description:
+            raise ValueError("descricao não fornecida.")
+        
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table(os.environ['TABLE_NAME'])
+        
         response = table.get_item(Key={'id_Caracteristica': characteristic_id})
         if 'Item' not in response:
-            return {
+           return {
                 "statusCode": 404,
-                "body": json.dumps({"message":"Característica não encontrada!"}, default=str)
+                "body": json.dumps({"message": "Característica não encontrada."}, default=str)
             }
         
         table.update_item(
@@ -36,10 +30,14 @@ def lambda_handler(event:any, context:any):
                 ':descricao': new_characteristic_description
             }
         )
-
         return {
             "statusCode": 200,
             "body": json.dumps({"message":"Característica atualizada com sucesso!"}, default=str)
+        }
+    except ValueError as err:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"message": str(err)}, default=str)
         }
     except Exception as ex:
         return {

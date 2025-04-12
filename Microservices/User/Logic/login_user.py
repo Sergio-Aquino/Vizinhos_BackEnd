@@ -2,21 +2,25 @@ import json
 import boto3
 import os
 
-def lambda_handler(event:any, context:any): 
-    email = json.loads(event['body'])['email'] if 'email' in json.loads(event['body']) else None
-    if not email:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({"message": "Email não informado!"}, default=str)
-        }
-    password = json.loads(event['body'])['senha'] if 'senha' in json.loads(event['body']) else None
-    if not password:
-        return {
-            'statusCode': 400,
-            'body': json.dumps({"message": "Senha não informada!"}, default=str)
-        }
-    
+def lambda_handler(event:any, context:any):
     try:
+        email = json.loads(event['body'])['email'] if 'email' in json.loads(event['body']) else None
+        if not email:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({"message": "Email não informado!"}, default=str)
+            }
+        
+        if not isinstance(email, str): 
+            raise TypeError("Email deve ser uma string")
+        
+        password = json.loads(event['body'])['senha'] if 'senha' in json.loads(event['body']) else None
+        if not password:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({"message": "Senha não informada!"}, default=str)
+            }
+
         cognito = boto3.client('cognito-idp')
         response = cognito.initiate_auth(
             ClientId=os.environ['COGNITO_CLIENT_ID'],

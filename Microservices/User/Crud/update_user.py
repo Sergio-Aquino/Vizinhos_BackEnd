@@ -1,9 +1,8 @@
 import json
-import datetime
 import boto3
 import os
-import re
 from dataclasses import dataclass
+import re
 
 @dataclass
 class User:
@@ -12,9 +11,6 @@ class User:
     Usuario_Tipo: str
     fk_id_Endereco: int
     telefone: str
-    email: str
-    senha: str
-    data_cadastro: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     @staticmethod
     def from_json(json_data: dict) -> 'User':        
@@ -28,8 +24,6 @@ class User:
             raise TypeError('Usuario_Tipo deve ser uma string')
         if not isinstance(json_data['telefone'], str):
             raise TypeError('telefone deve ser uma string')
-        if not isinstance(json_data['email'], str):
-            raise TypeError('email deve ser uma string')
             
         json_data['cpf'] = re.sub(r'\D', '', json_data.get('cpf', ''))
         if not re.match(r'^\d{11}$', json_data['cpf']):
@@ -41,96 +35,80 @@ class User:
             Usuario_Tipo=json_data['Usuario_Tipo'],
             fk_id_Endereco=json_data['fk_id_Endereco'],
             telefone=json_data['telefone'],
-            email=json_data['email'],
-            senha=json_data['senha']
         )
 
 def lambda_handler(event:any, context:any):
     try:
-        body = json.loads(event["body"])
+        body = json.loads(event['body'])
         user = User.from_json(body)
 
         dynamodb = boto3.resource('dynamodb')
         user_table = dynamodb.Table(os.environ['USER_TABLE'])
 
-        response = user_table.get_item(
-            Key={'cpf': user.cpf}
-        )
-
-        if 'Item' in response:
-            raise ValueError("CPF já cadastrado")
+        response = user_table.get_item(Key={'cpf': user.cpf})
+        if 'Item' not in response:
+            return {
+                "statusCode": 404,
+                "body": json.dumps({"message": "Usuário não encontrado"})
+            }
         
         address_store_table = dynamodb.Table(os.environ['ADDRESS_STORE_TABLE'])
-        response = address_store_table.get_item(
-            Key={'id_Endereco': user.fk_id_Endereco}
-        )
-
+        response = address_store_table.get_item(Key={'id_Endereco': user.fk_id_Endereco})
         if 'Item' not in response:
             return {
                 "statusCode": 404,
                 "body": json.dumps({"message": "Endereço não encontrado"})
             }
 
-        cognito = boto3.client('cognito-idp')
-        cognito.sign_up(
-            ClientId=os.environ['COGNITO_CLIENT_ID'],
-            Username=user.email,
-            Password=user.senha,
-        )
-
-        user_table.put_item(
-            Item={
-                'cpf': user.cpf,
-                'nome': user.nome,
-                'Usuario_Tipo': user.Usuario_Tipo,
-                'fk_id_Endereco': user.fk_id_Endereco,
-                'telefone': user.telefone,
-                'email': user.email,
-                'data_cadastro': user.data_cadastro
-            }
-        )
-
+        user_table.update_item(
+                Key={'cpf': user.cpf},
+                UpdateExpression="SET Usuario_Tipo = :Usuario_Tipo, fk_id_Endereco = :fk_id_Endereco, telefone = :telefone, nome = :nome",
+                ExpressionAttributeValues={
+                    ':nome': user.nome,
+                    ':Usuario_Tipo': user.Usuario_Tipo,
+                    ':fk_id_Endereco': user.fk_id_Endereco,
+                    ':telefone': user.telefone,
+                }
+            )
+        
         return {
             "statusCode": 200,
-            "body": json.dumps(
-                {
-                    "message": "Usuário criado com sucesso",
-                    "id_Usuario": user.cpf,
-                    "fk_id_Endereco": user.fk_id_Endereco
-                }, 
-                default=str)
+            "body": json.dumps({"message": "Usuário atualizado com sucesso!"}, default=str)
         }
+        
     except KeyError as err:
         return {
             "statusCode": 400,
             'body': json.dumps({'message': f'Campo obrigatório não informado: {str(err)}'}, default=str)
         }
-    except ValueError as ve:
+    except ValueError as err:
         return {
-            "statusCode": 400,
-            "body": json.dumps({"message": str(ve)}, default=str)
+            'statusCode': 400,
+            'body': json.dumps({'message': str(err)}, default=str)
         }
-    except Exception as ex:
+    except TypeError as err:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': str(err)}, default=str)
+        }
+    except Exception as ex: 
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": "Erro ao criar usuário: " + str(ex)}, default=str)
+            "body": json.dumps({"message": "Erro ao atualizar usuário: " + str(ex)}, default=str)
         }
     
 
-if __name__ == "__main__": 
-    os.environ['COGNITO_CLIENT_ID'] = '12rp435mgucks8jfndh1dufr0e'
+if __name__ == "__main__":
     os.environ['USER_TABLE'] = 'Usuario'
     os.environ['ADDRESS_STORE_TABLE'] = 'Loja_Endereco'
 
     event = {
         "body": json.dumps({
-            "nome": "Sergio",
+            "nome": "Aquino Lima",
             "cpf": "12345678901",
-            "email": "sergioadm120@gmail.com",
-            "Usuario_Tipo": "customer",
+            "Usuario_Tipo": "seller",
             "fk_id_Endereco": 743647647193518997,
-            "telefone": "1234567890",
-            "senha": "MinhaSenha123#"
+            "telefone": "40028922",
         })
     }
     print(lambda_handler(event, None))
