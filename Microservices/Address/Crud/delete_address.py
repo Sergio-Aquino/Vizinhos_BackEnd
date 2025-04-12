@@ -21,7 +21,10 @@ def lambda_handler(event:any, context:any):
             Key={'id_Endereco': address_id}
         )
         if 'Item' not in response:
-            raise ValueError("Endereço não encontrado!")
+            return {
+                "statusCode": 404,
+                "body": json.dumps({"message": "Endereço não encontrado"}, default=str)
+            }
         
         table.delete_item(
             Key={'id_Endereco': address_id}

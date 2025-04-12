@@ -41,7 +41,7 @@ def lambda_handler(event:any, context:any):
 if __name__ == "__main__":
     os.environ['BUCKET_NAME'] = 'loja-profile-pictures'
 
-    with open('Microservices\\Address\\imagem_teste.jpg', 'rb') as image_file:
+    with open('Microservices\\Address\\Crud\\Resources\\imagem_teste.jpg', 'rb') as image_file:
         base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
     event = {

@@ -43,6 +43,10 @@ class User:
         json_data['cpf'] = re.sub(r'\D', '', json_data.get('cpf', ''))
         if not re.match(r'^\d{11}$', json_data['cpf']):
             raise ValueError('Formatação de CPF inválida')
+        
+        telefone_pattern = r'^\+55\d{11}$'
+        if not re.match(telefone_pattern, json_data['telefone']):
+            raise ValueError('Formatação de telefone inválida. Deve seguir o padrão +5511954674532')
 
         return User(
             nome=json_data['nome'],
