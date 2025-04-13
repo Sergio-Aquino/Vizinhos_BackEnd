@@ -4,16 +4,16 @@ import boto3
 import os
 
 def lambda_handler(event:any, context:any):
-    characteristic_description = json.loads(event['body'])['descricao'] if 'descricao' in json.loads(event['body']) else None
-    if not characteristic_description:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"message":"Descrição não informada!"}, default=str)
-        }
-    
-    characteristic_id = int(str((uuid.uuid4().int))[:18])
-
     try:
+        characteristic_description = json.loads(event['body'])['descricao'] if 'descricao' in json.loads(event['body']) else None
+        if not characteristic_description:
+            raise ValueError("Descrição não informada")
+        
+        if not isinstance(characteristic_description, str):
+            raise ValueError("Descrição deve ser uma string")
+        
+        characteristic_id = int(str((uuid.uuid4().int))[:18])
+
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table(os.environ['TABLE_NAME'])
         table.put_item(Item={
@@ -24,6 +24,11 @@ def lambda_handler(event:any, context:any):
         return {
             "statusCode": 200,
             "body": json.dumps({"message":"Característica criada com sucesso!"}, default=str)
+        }
+    except ValueError as err:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"message": str(err)}, default=str)
         }
     except Exception as ex:
         return {

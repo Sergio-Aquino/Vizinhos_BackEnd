@@ -7,17 +7,11 @@ import uuid
 def lambda_handler(event:any, context:any):
     base64_image = json.loads(event['body'])['image'] if 'image' in json.loads(event['body']) else None
     if not base64_image:
-        return {
-            'statusCode': 400,
-            'body': json.dumps('Imagem não informada')
-        }
+        raise ValueError("Imagem não informada")
     
     file_extension = json.loads(event['body'])['file_extension'] if 'file_extension' in json.loads(event['body']) else None
     if not file_extension:
-        return {
-            'statusCode': 400,
-            'body': json.dumps('Extensão de arquivo não informada')
-        }
+        raise ValueError("Extensão do arquivo não informada")
     
     try: 
         s3 = boto3.client('s3')
@@ -32,6 +26,11 @@ def lambda_handler(event:any, context:any):
             'statusCode': 200,
             'body': json.dumps({"file_name": file_name})
         }
+    except ValueError as err:
+        return {
+            'statusCode': 400,
+            'body': json.dumps('mensagem: ' + str(err))
+        }
     except Exception as ex:
         return {
             'statusCode': 500,
@@ -42,7 +41,7 @@ def lambda_handler(event:any, context:any):
 if __name__ == "__main__":
     os.environ['BUCKET_NAME'] = 'loja-profile-pictures'
 
-    with open('Microservices\\Address\\imagem_teste.jpg', 'rb') as image_file:
+    with open('Microservices\\Address\\Crud\\Resources\\imagem_teste.jpg', 'rb') as image_file:
         base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
     event = {
