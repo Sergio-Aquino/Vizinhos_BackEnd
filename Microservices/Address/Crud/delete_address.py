@@ -11,6 +11,8 @@ def lambda_handler(event:any, context:any):
                 "body": json.dumps({"message": "id_Endereco não informado!"}, default=str)
             }
         
+        address_id = int(address_id)
+        
         if not isinstance(address_id, int):
             raise ValueError("id_Endereco deve ser um inteiro!")
     
@@ -42,7 +44,7 @@ def lambda_handler(event:any, context:any):
     except Exception as ex:
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": "Erro ao deletar o endereço!", "error": str(ex)}, default=str)
+            "body": json.dumps({"message": "Erro ao deletar o endereço: " + str(ex)}, default=str)
         }
     
 

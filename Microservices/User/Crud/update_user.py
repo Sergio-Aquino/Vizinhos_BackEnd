@@ -108,7 +108,7 @@ if __name__ == "__main__":
             "cpf": "12345678901",
             "Usuario_Tipo": "seller",
             "fk_id_Endereco": 743647647193518997,
-            "telefone": "40028922",
+            "telefone": "40028922"
         })
     }
     print(lambda_handler(event, None))

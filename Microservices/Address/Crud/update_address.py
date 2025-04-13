@@ -81,7 +81,7 @@ def validate_cep(cep:str):
     try:
         response = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
         if response.status_code != 200 or 'erro' in response.json():
-            raise ValueError('CEP não encontrado')
+            raise ValueError('Problema ao validar CEP informado')
     except Exception as ex:
         raise Exception(str(ex))
 
