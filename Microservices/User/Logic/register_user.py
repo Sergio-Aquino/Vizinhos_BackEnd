@@ -132,6 +132,12 @@ def lambda_handler(event:any, context:any):
             address_store = Address_Store.from_json(body)
             user.fk_id_Endereco = address_store.id_Endereco
 
+            dynamodb = boto3.resource('dynamodb')
+            
+            user_table = dynamodb.Table(os.environ['USER_TABLE'])
+            if 'Item' in user_table.get_item(Key={'cpf': user.cpf}):
+                raise ValueError('CPF já cadastrado')
+
             cognito = boto3.client('cognito-idp')
             cognito.sign_up(
                 ClientId=os.environ['COGNITO_CLIENT_ID'],
@@ -139,7 +145,17 @@ def lambda_handler(event:any, context:any):
                 Password=user.senha,
             )
             
-            dynamodb = boto3.resource('dynamodb')
+            user_table.put_item(
+                Item={
+                    'nome': user.nome,
+                    'cpf': user.cpf,
+                    'Usuario_Tipo': user.Usuario_Tipo,
+                    'fk_id_Endereco': user.fk_id_Endereco,
+                    'telefone': user.telefone,
+                    'email': user.email,
+                    'data_cadastro': user.data_cadastro
+                }
+            )
 
             address_store_table = dynamodb.Table(os.environ['ADDRESS_STORE_TABLE'])
 
@@ -160,26 +176,6 @@ def lambda_handler(event:any, context:any):
                 })
 
             address_store_table.put_item(Item=address_store_item)
-
-            user_table = dynamodb.Table(os.environ['USER_TABLE'])
-
-            if 'Item' in user_table.get_item(Key={'cpf': user.cpf}):
-                address_store_table.delete_item(
-                    Key={'id_Endereco': address_store.id_Endereco}
-                )
-                raise ValueError('CPF já cadastrado')
-
-            user_table.put_item(
-                Item={
-                    'nome': user.nome,
-                    'cpf': user.cpf,
-                    'Usuario_Tipo': user.Usuario_Tipo,
-                    'fk_id_Endereco': user.fk_id_Endereco,
-                    'telefone': user.telefone,
-                    'email': user.email,
-                    'data_cadastro': user.data_cadastro
-                }
-            )
 
             return {
                 'statusCode': 200,
