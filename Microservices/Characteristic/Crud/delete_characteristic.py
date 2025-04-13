@@ -8,6 +8,8 @@ def lambda_handler(event:any, context:any):
         if not characteristic_id:
             raise ValueError("id_Caracteristica não informado")
         
+        characteristic_id = int(characteristic_id)
+        
         if not isinstance(characteristic_id, int):
             raise ValueError("id_Caracteristica deve ser um inteiro")
             
