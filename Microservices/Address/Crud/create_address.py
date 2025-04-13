@@ -11,7 +11,7 @@ def validate_cep(cep:str):
     try:
         response = requests.get(f"https://viacep.com.br/ws/{cep}/json/")
         if response.status_code != 200 or 'erro' in response.json():
-            raise ValueError('CEP inválido ou não encontrado')
+            raise ValueError('Problema ao validar CEP informado')
     except Exception as ex:
         raise Exception(str(ex))
 
@@ -117,7 +117,12 @@ def lambda_handler(event:any, context:any):
             )
         return {
             "statusCode": 200,
-            "body": json.dumps({"message": "Dados salvos com sucesso!"})
+            "body": json.dumps(
+                {
+                    "message": "Dados salvos com sucesso!",
+                    "id_Endereco": address_store.id_Endereco,
+                }
+            )
         }
     except KeyError as err:
         return {

@@ -2,7 +2,7 @@ import json
 import os
 import boto3
 
-def lamda_handler(event:any, context:any):
+def lambda_handler(event:any, context:any):
     try: 
         address_id = event.get('queryStringParameters', {}).get('id_Endereco')
         if not address_id:
@@ -11,6 +11,8 @@ def lamda_handler(event:any, context:any):
                 'body': json.dumps({"message": "Campo obrigatório não informado: id_Endereco"}, default=str)
             }
         
+        address_id = int(address_id)
+
         if not isinstance(address_id, int):
             raise ValueError("id_Endereco deve ser um inteiro!")
         
@@ -46,4 +48,4 @@ if __name__ == "__main__":
             'id_Endereco': "489864014224531116"
         }
     }
-    print(lamda_handler(event, None))
+    print(lambda_handler(event, None))
