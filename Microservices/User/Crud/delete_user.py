@@ -2,15 +2,15 @@ import json
 import boto3
 import os
 
-def lambda_handler(event:any, context:any): 
-    user_id = event.get("queryStringParameters", {}).get("cpf")
-    if not user_id:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"message": "CPF não informado"}, default=str)
-        }
-    
-    try:
+def lambda_handler(event:any, context:any):
+    try: 
+        user_id = event.get("queryStringParameters", {}).get("cpf")
+        if not user_id:
+            raise ValueError("CPF não fornecido")
+        
+        if not isinstance(user_id, str):
+            raise TypeError("CPF deve ser uma string")
+        
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table(os.environ['TABLE_NAME'])
         response = table.get_item(Key={'cpf': user_id})
@@ -18,9 +18,9 @@ def lambda_handler(event:any, context:any):
         if 'Item' not in response:
             return {
                 "statusCode": 404,
-                "body": json.dumps({"message": "Usuário não encontrado"}, default=str)
-
+                "body": json.dumps({"message": "Usuário não encontrado."}, default=str)
             }
+        
         user_email = response['Item']['email']
         
         cognito = boto3.client('cognito-idp')
@@ -35,7 +35,17 @@ def lambda_handler(event:any, context:any):
             "statusCode": 200,
             "body": json.dumps({"message": "Usuário deletado com sucesso!"}, default=str)
         }
-        
+    except ValueError as err:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"message": str(err)}, default=str)
+        }
+    except TypeError as err:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"message": str(err)}, default=str)
+        }
+    
     except Exception as ex:
         return {
             "statusCode": 500,
