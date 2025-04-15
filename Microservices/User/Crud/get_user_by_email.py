@@ -20,21 +20,37 @@ def lambda_handler(event:any, context:any):
             raise ValueError("email inválido")
 
         dynamodb = boto3.resource('dynamodb')
-        table = dynamodb.Table(os.environ['TABLE_NAME'])
-        response = table.query(
+        user_table = dynamodb.Table(os.environ['TABLE_NAME'])
+        response_user = user_table.query(
             IndexName='email-index',
             KeyConditionExpression=boto3.dynamodb.conditions.Key('email').eq(email)
         )
 
-        if 'Items' not in response or len(response['Items']) == 0:
+        if 'Items' not in response_user or len(response_user['Items']) == 0:
             return {
             'statusCode': 404,
             'body': json.dumps({'message': "Usuário não encontrado"}, default=str)
             }
+
+        address_id = int(response_user['Items'][0]['fk_id_Endereco'])
+
+        address_table = dynamodb.Table(os.environ['ADRESS_STORE_TABLE'])
+        response_address = address_table.get_item(Key={'id_Endereco': address_id})
+
+        if 'Item' not in response_address:
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'message': "Endereço de usuário não encontrado"}, default=str)
+            }
         
         return {
             'statusCode': 200,
-            'body': json.dumps({"usuario": response['Items']}, default=str)
+            'body': json.dumps(
+                {
+                    "usuario": response_user['Items'][0],
+                    "endereco": response_address['Item']
+                 }, 
+                default=str)
         }
     except ValueError as err:
         return {
@@ -54,6 +70,7 @@ def lambda_handler(event:any, context:any):
     
 if __name__ == "__main__":
     os.environ['TABLE_NAME'] = 'Usuario'
+    os.environ["ADRESS_STORE_TABLE"] = 'Loja_Endereco'
     event = {
         'queryStringParameters': {
             'email': "sergioadm120@gmail.com"
