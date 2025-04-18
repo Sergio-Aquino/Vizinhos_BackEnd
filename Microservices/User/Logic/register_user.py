@@ -219,7 +219,7 @@ if __name__ == "__main__":
             "nome": "Sergio Gabriel",
              "cpf": "12345678901",
             "Usuario_Tipo": "customer",
-            "telefone": "1234567890",
+            "telefone": "+5511234567890",
             "email": "sergioadm120@gmail.com",
             "senha": "MinhaSenha123#",
             "cep": "08583620",
