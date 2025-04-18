@@ -8,7 +8,7 @@ def lambda_handler(event:any, context:any):
         if not review_id:
             return {
                 'statusCode': 400,
-                'body': json.dumps('id_Avaliacao não fornecido')
+                'body': json.dumps({'message':'id_Avaliacao não fornecido'}, default=str)
             }
         
         review_id = int(review_id)
@@ -23,7 +23,7 @@ def lambda_handler(event:any, context:any):
         if 'Item' not in response:
             return {
                 'statusCode': 404,
-                'body': json.dumps('Avaliação não encontrada')
+                'body': json.dumps({'message':'Avaliação não encontrada'}, default=str)
             }
         
         return {

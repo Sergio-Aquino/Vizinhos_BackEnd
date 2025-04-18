@@ -8,7 +8,7 @@ def lambda_handler(event:any, context:any):
         if not review_id:
             return {
                 'statusCode': 400,
-                'body': json.dumps('id_Avaliacao não fornecido')
+                'body': json.dumps({'message':'id_Avaliacao não fornecido'}, default=str)
             }
         
         review_id = int(review_id)
@@ -21,7 +21,7 @@ def lambda_handler(event:any, context:any):
         if 'Item' not in table_review.get_item(Key={'id_Avaliacao': review_id}):
             return {
                 'statusCode': 404,
-                'body': json.dumps('Avaliação não encontrada')
+                'body': json.dumps({'message':'Avaliação não encontrada'}, default=str)
             }
         
         table_review.delete_item(
@@ -32,7 +32,7 @@ def lambda_handler(event:any, context:any):
 
         return {
             'statusCode': 200,
-            'body': json.dumps('Avaliação deletada com sucesso!')
+            'body': json.dumps({'message':'Avaliação deletada com sucesso!'}, default=str)
         }
 
     except Exception as ex:

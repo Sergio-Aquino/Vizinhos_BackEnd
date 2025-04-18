@@ -37,7 +37,7 @@ def lambda_handler(event:any, content:any):
         if 'Item' not in response:
             return {
                 'statusCode': 404,
-                'body': 'Usuario não encontrado'
+                'body': json.dumps({'message':'Usuario não encontrado'})
             }
 
         
@@ -45,10 +45,26 @@ def lambda_handler(event:any, content:any):
         if 'Item' not in table_address_store.get_item(Key={'id_Endereco': review.fk_id_Endereco}):
             return {
                 'statusCode': 404,
-                'body': 'Loja não encontrada'
+                'body': json.dumps({'message':'Loja não encontrada'})
             }
-    
         
+        response_user = table_user.query(
+            IndexName='fk_id_Endereco-index',
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(review.fk_id_Endereco)
+        )
+
+        if 'Items' not in response_user or len(response_user['Items']) == 0:
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'message':'Proprietario não encontrado'})
+            }
+        
+        if response_user['Items'][0]['Usuario_Tipo'] not in ['seller', 'customer_seller']:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message':'Só é possível avaliar lojas'})
+            }
+                
         table_review = dynamodb.Table(os.environ['REVIEW_TABLE'])
         table_review.put_item(
             Item={
@@ -105,7 +121,7 @@ if __name__ == "__main__":
     event = {
         'body': json.dumps({
             'fk_Usuario_cpf': '52750852811',
-            'fk_id_Endereco': 857057699749152416,
+            'fk_id_Endereco': 170474410818097413,
             'avaliacao': 5,
             'comentario': 'Boa loja!'
         })

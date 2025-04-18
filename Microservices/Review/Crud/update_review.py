@@ -2,7 +2,6 @@ from dataclasses import dataclass
 import boto3
 import os
 import json
-import uuid
 
 @dataclass
 class Review:
@@ -57,7 +56,24 @@ def lambda_handler(event:any, context:any):
         if 'Item' not in table_address_store.get_item(Key={'id_Endereco': review.fk_id_Endereco}):
             return {
                 'statusCode': 404,
-                'body': json.dumps('Loja não encontrada')
+                'body': json.dumps({'message':'Loja não encontrada'}, default=str)
+            }
+        
+        response_user = table_user.query(
+            IndexName='fk_id_Endereco-index',
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(review.fk_id_Endereco)
+        )
+
+        if 'Items' not in response_user or len(response_user['Items']) == 0:
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'message':'Proprietario não encontrado'})
+            }
+        
+        if response_user['Items'][0]['Usuario_Tipo'] not in ['seller', 'customer_seller']:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message':'Só é possível avaliar lojas'})
             }
 
         
@@ -73,7 +89,19 @@ def lambda_handler(event:any, context:any):
 
         return {
             'statusCode': 200,
-            'body': json.dumps({"avaliacao": body}, default=str)
+            'body': json.dumps(
+                {
+                    'message': 'Avaliação atualizada com sucesso!',
+                    'avaliacao': {
+                        'id_Avaliacao': review.id_Avaliacao,
+                        'fk_Usuario_cpf': review.fk_Usuario_cpf,
+                        'fk_id_Endereco': review.fk_id_Endereco,
+                        'avaliacao': review.avaliacao,
+                        'comentario': review.comentario
+                    }
+                },
+                default=str
+            )
         }
     except ValueError as err:
         return {
@@ -105,9 +133,9 @@ if __name__ == "__main__":
     event = {
         'body': json.dumps({
             'fk_Usuario_cpf': '52750852811',
-            'fk_id_Endereco': 1,
+            'fk_id_Endereco': 857057699749152416,
             'avaliacao': 5,
-            'comentario': 'Ótimo serviço!',
+            'comentario': 'Ótimo serviço updated!',
             'id_Avaliacao': 223840994986634202
         })
     }
