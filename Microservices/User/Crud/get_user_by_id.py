@@ -27,7 +27,7 @@ def lambda_handler(event:any, context:any):
         }
     except ValueError as err:
         return {
-            'statusCode': 404,
+            'statusCode': 400,
             'body': json.dumps({'message': str(err)}, default=str)
         }
     except TypeError as err:
