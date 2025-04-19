@@ -1,0 +1,164 @@
+import json
+from typing import List
+import boto3
+import os
+from dataclasses import dataclass
+import uuid
+from decimal import Decimal
+
+
+@dataclass
+class Product:
+    nome: str
+    fk_id_Endereco: int
+    fk_id_Categoria: int
+    dias_vcto: int
+    valor_venda: Decimal
+    valor_custo: Decimal
+    tamanho: str
+    descricao: str
+    id_imagem: int
+    disponivel: bool
+    caracteristicas_IDs: List[int]
+    id_Produto: int = int(str((uuid.uuid4().int))[:18])
+
+
+    @staticmethod
+    def from_json(json_data: dict):
+        if not isinstance(json_data['nome'], str):
+            raise TypeError('nome deve ser uma string')
+        if not isinstance(json_data['fk_id_Endereco'], int):
+            raise TypeError('fk_id_Endereco deve ser um inteiro')
+        if not isinstance(json_data['fk_id_Categoria'], int):
+            raise TypeError('fk_id_Categoria deve ser um inteiro')
+        if not isinstance(json_data['dias_vcto'], int):
+            raise TypeError('dias_vcto deve ser um inteiro')
+        
+        if isinstance(json_data['valor_venda'], (float, int)):
+            json_data['valor_venda'] = Decimal(str(json_data['valor_venda']))
+        if not isinstance(json_data['valor_venda'], Decimal):
+            raise TypeError('valor_venda deve ser um decimal')
+    
+        if isinstance(json_data['valor_custo'], (float, int)):
+            json_data['valor_custo'] = Decimal(str(json_data['valor_custo']))
+        if not isinstance(json_data['valor_custo'], Decimal):
+            raise TypeError('valor_custo deve ser um decimal')
+        
+        if not isinstance(json_data['tamanho'], str):
+            raise TypeError('tamanho deve ser uma string')
+        if not isinstance(json_data['descricao'], str):
+            raise TypeError('descricao deve ser uma string')
+        if not isinstance(json_data['id_imagem'], int):
+            raise TypeError('id_imagem deve ser um inteiro')
+        if not isinstance(json_data['disponivel'], bool):
+            raise TypeError('disponivel deve ser um booleano')
+        if not isinstance(json_data['caracteristicas_IDs'], list):
+            raise TypeError('caracteristicas_IDs deve ser uma lista')
+        if not all(isinstance(i, int) for i in json_data['caracteristicas_IDs']):
+            raise TypeError('Todos os elementos de caracteristicas_IDs devem ser inteiros')
+
+        return Product(**json_data)
+
+def lambda_handler(event:any, context:any): 
+    try:
+        body = json.loads(event['body'])
+        product = Product.from_json(body)
+
+        dynamodb = boto3.resource('dynamodb')
+
+        table_address_store = dynamodb.Table(os.environ['ADDRESS_TABLE'])
+        if 'Item' not in table_address_store.get_item(Key={'id_Endereco': product.fk_id_Endereco}):
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'message':'Loja não encontrada'})
+            }
+
+        table_category = dynamodb.Table(os.environ['CATEGORY_TABLE'])
+        if 'Item' not in table_category.get_item(Key={'id_Categoria': product.fk_id_Categoria}):
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'message':'Categoria não encontrada'})
+            }
+        
+        table_characteristic = dynamodb.Table(os.environ['CHARACTERISTIC_TABLE'])
+        table_product_characteristic = dynamodb.Table(os.environ['PRODUCT_CHARACTERISTIC_TABLE'])
+
+        for id_caracteristica in product.caracteristicas_IDs:
+            if 'Item' not in table_characteristic.get_item(Key={'id_Caracteristica': id_caracteristica}):
+                return {
+                    'statusCode': 404,
+                    'body': json.dumps({'message':f'Característica com id:{id_caracteristica} não encontrada'})
+                }
+            
+            table_product_characteristic.put_item(
+                Item={
+                    "fk_Carecteristica_id_Caracteristica": id_caracteristica,
+                    "fk_Produto_id_Produto": product.id_Produto
+                }, ConditionExpression="attribute_not_exists(fk_Carecteristica_id_Caracteristica) AND attribute_not_exists(fk_Produto_id_Produto)"
+            )
+
+        table_product = dynamodb.Table(os.environ['PRODUCT_TABLE'])
+        table_product.put_item(Item={
+            'id_Produto': product.id_Produto,
+            'nome': product.nome,
+            'fk_id_Endereco': product.fk_id_Endereco,
+            'fk_id_Categoria': product.fk_id_Categoria,
+            'dias_vcto': product.dias_vcto,
+            'valor_venda': product.valor_venda,
+            'valor_custo': product.valor_custo,
+            'tamanho': product.tamanho,
+            'descricao': product.descricao,
+            'id_imagem': product.id_imagem,
+            'disponivel': product.disponivel
+        }, ConditionExpression="attribute_not_exists(id_Produto)")
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps({
+                'message': 'Produto criado com sucesso',
+                'produto': product.__dict__
+            }, default=str)
+        }
+    except KeyError as err:
+        return {
+            "statusCode": 400,
+            'body': json.dumps({'message': f'Campo obrigatório não informado: {str(err)}'}, default=str)
+        }
+    except TypeError as err:
+         return {
+            'statusCode': 400,
+            'body': json.dumps({'message': str(err)}, default=str)
+        }
+    except Exception as ex:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({
+                'message': 'Erro ao criar produto: ' + str(ex),
+            }, default=str)
+        }
+    
+
+if __name__ == "__main__":
+    os.environ['ADDRESS_TABLE'] = 'Loja_Endereco'
+    os.environ['CATEGORY_TABLE'] = 'Categoria'
+    os.environ['PRODUCT_TABLE'] = 'Produto'
+    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = 'Produto_Caracteristica'
+    os.environ['CHARACTERISTIC_TABLE'] = 'Caracteristica'
+
+    event = {
+        'body': json.dumps({
+            'nome': 'Produto Teste',
+            'fk_id_Endereco': 289730530859017892,
+            'fk_id_Categoria': 230242207820669758,
+            'dias_vcto': 30,
+            'valor_venda': 10.0,
+            'valor_custo': 5.0,
+            'tamanho': 'M',
+            'descricao': 'Produto de teste',
+            'id_imagem': 1,
+            'disponivel': True,
+            'caracteristicas_IDs': [851757438215884457, 367612793554248295, 125465533661467574]
+        })
+    }
+
+    print(lambda_handler(event, None))
