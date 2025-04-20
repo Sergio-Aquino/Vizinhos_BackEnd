@@ -72,6 +72,26 @@ def lambda_handler(event:any, context:any):
                 'statusCode': 404,
                 'body': json.dumps({'message':'Loja não encontrada'})
             }
+        
+        table_user = dynamodb.Table(os.environ['USER_TABLE'])
+        response_user = table_user.query(
+            IndexName='fk_id_Endereco-index',
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(product.fk_id_Endereco)
+        )
+
+        if 'Items' not in response_user or len(response_user['Items']) == 0:
+            return {
+                'statusCode': 404,
+                'body': json.dumps({'message':'Não foi possível relacionar a loja com o vendedor'})
+            }
+        
+        if response_user['Items'][0]['Usuario_Tipo'] not in ['seller', 'customer_seller']:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': 'Apenas vendedores podem criar produtos'})
+            }
+        
+
 
         table_category = dynamodb.Table(os.environ['CATEGORY_TABLE'])
         if 'Item' not in table_category.get_item(Key={'id_Categoria': product.fk_id_Categoria}):
@@ -144,11 +164,12 @@ if __name__ == "__main__":
     os.environ['PRODUCT_TABLE'] = 'Produto'
     os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = 'Produto_Caracteristica'
     os.environ['CHARACTERISTIC_TABLE'] = 'Caracteristica'
+    os.environ['USER_TABLE'] = 'Usuario'
 
     event = {
         'body': json.dumps({
             'nome': 'Produto Teste',
-            'fk_id_Endereco': 289730530859017892,
+            'fk_id_Endereco': 857057699749152416,
             'fk_id_Categoria': 230242207820669758,
             'dias_vcto': 30,
             'valor_venda': 10.0,
