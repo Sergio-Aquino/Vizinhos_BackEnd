@@ -19,8 +19,8 @@ class Product:
     descricao: str
     id_imagem: int
     disponivel: bool
-    caracteristicas_IDs: List[int]
-    id_Produto: int = int(str((uuid.uuid4().int))[:18])
+    caracteristicas_IDs: List[str]
+    id_Produto: str =  str(uuid.uuid4())
 
 
     @staticmethod
@@ -48,14 +48,14 @@ class Product:
             raise TypeError('tamanho deve ser uma string')
         if not isinstance(json_data['descricao'], str):
             raise TypeError('descricao deve ser uma string')
-        if not isinstance(json_data['id_imagem'], int):
-            raise TypeError('id_imagem deve ser um inteiro')
+        if not isinstance(json_data['id_imagem'], str):
+            raise TypeError('id_imagem deve ser uma string')
         if not isinstance(json_data['disponivel'], bool):
             raise TypeError('disponivel deve ser um booleano')
         if not isinstance(json_data['caracteristicas_IDs'], list):
             raise TypeError('caracteristicas_IDs deve ser uma lista')
-        if not all(isinstance(i, int) for i in json_data['caracteristicas_IDs']):
-            raise TypeError('Todos os elementos de caracteristicas_IDs devem ser inteiros')
+        if not all(isinstance(i, str) for i in json_data['caracteristicas_IDs']):
+            raise TypeError('Todos os elementos de caracteristicas_IDs devem ser strings')
 
         return Product(**json_data)
 
@@ -82,7 +82,7 @@ def lambda_handler(event:any, context:any):
         if 'Items' not in response_user or len(response_user['Items']) == 0:
             return {
                 'statusCode': 404,
-                'body': json.dumps({'message':'Não foi possível relacionar a loja com o vendedor'})
+                'body': json.dumps({'message':'Não foi possível relacionar a loja com um vendedor'})
             }
         
         if response_user['Items'][0]['Usuario_Tipo'] not in ['seller', 'customer_seller']:
@@ -167,18 +167,18 @@ if __name__ == "__main__":
     os.environ['USER_TABLE'] = 'Usuario'
 
     event = {
-        'body': json.dumps({
-            'nome': 'Produto Teste',
-            'fk_id_Endereco': 857057699749152416,
-            'fk_id_Categoria': 230242207820669758,
-            'dias_vcto': 30,
-            'valor_venda': 10.0,
-            'valor_custo': 5.0,
-            'tamanho': 'M',
-            'descricao': 'Produto de teste',
-            'id_imagem': 1,
-            'disponivel': True,
-            'caracteristicas_IDs': [851757438215884457, 367612793554248295, 125465533661467574]
+        "body": json.dumps({
+            "nome": 'Produto Teste',
+            "fk_id_Endereco": 857057699749152416,
+            "fk_id_Categoria": 230242207820669758,
+            "dias_vcto": 30,
+            "valor_venda": 10.0,
+            "valor_custo": 5.0,
+            "tamanho": 'M',
+            "descricao": 'Produto de teste',
+            "id_imagem": "0ca0c299-c2b7-4d2a-ac34-02c6ce82bb2a.jpg",
+            "disponivel": True,
+            "caracteristicas_IDs": [851757438215884457, 367612793554248295, 125465533661467574]
         })
     }
 
