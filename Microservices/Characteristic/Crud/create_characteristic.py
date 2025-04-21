@@ -12,7 +12,7 @@ def lambda_handler(event:any, context:any):
         if not isinstance(characteristic_description, str):
             raise ValueError("Descrição deve ser uma string")
         
-        characteristic_id = int(str((uuid.uuid4().int))[:18])
+        characteristic_id = str((uuid.uuid4()))
 
         dynamodb = boto3.resource('dynamodb')
         table = dynamodb.Table(os.environ['TABLE_NAME'])
