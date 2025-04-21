@@ -45,7 +45,8 @@ def get_product_image(id_imagem: int) -> str:
         image_url = f"https://{bucket_name}.s3.amazonaws.com/{id_imagem}"
         return image_url
     except Exception as ex:
-        raise Exception(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
+        print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
+        return None
 
 
 def lambda_handler(event: any, context:any): 

@@ -20,7 +20,7 @@ class Product:
     id_imagem: int
     disponivel: bool
     caracteristicas_IDs: List[str]
-    id_Produto: str =  str(uuid.uuid4())
+    id_Produto: str =  None
 
 
     @staticmethod
@@ -56,6 +56,8 @@ class Product:
             raise TypeError('caracteristicas_IDs deve ser uma lista')
         if not all(isinstance(i, str) for i in json_data['caracteristicas_IDs']):
             raise TypeError('Todos os elementos de caracteristicas_IDs devem ser strings')
+        
+        json_data['id_Produto'] = str(uuid.uuid4())
 
         return Product(**json_data)
 
