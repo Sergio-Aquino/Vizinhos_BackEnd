@@ -24,11 +24,13 @@ def lambda_handler(event:any, context:any):
             })
         }
     except ValueError as err:
+        print(f"Erro: {err}")
         return {
             'statusCode': 400,
             'body': json.dumps({'mensagem: ' + str(err)}, default=str)
         }
     except Exception as ex:
+        print(f"Erro: {ex}")
         return {
             'statusCode': 500,
             'body': json.dumps({'message':'Erro ao retornar imagem: ' + str(ex)}, default=str)
@@ -36,10 +38,10 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['BUCKET_NAME'] = 'product-image-vizinhos'
+    os.environ['BUCKET_NAME'] = 'loja-profile-pictures'
     event = {
         'queryStringParameters': {
-            "id_imagem": "3f23edd0-1e35-4ba4-b835-89960a425f48.jpg"
+            "id_imagem": "eb6a88bd-4963-478f-a6a6-87a6e8db8e4f.jpg"
         }
     }  
     print(lambda_handler(event, None))
