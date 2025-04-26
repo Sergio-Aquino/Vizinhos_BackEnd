@@ -85,6 +85,26 @@ def get_stores_within_500_meters(orign_cep, stores):
 
     return stores_within_500_meters
 
+def get_store_image(id_imagem):
+    try:
+        s3 = boto3.client('s3')
+        bucket_name = os.environ['BUCKET_NAME']
+        
+        if not id_imagem:
+            raise ValueError("ID da imagem não informado")
+            
+        s3 = boto3.client('s3')
+        bucket_name = os.environ['BUCKET_NAME']
+
+        response = s3.get_object(Bucket=bucket_name, Key=id_imagem)
+        if response['ResponseMetadata']['HTTPStatusCode'] != 200:
+            raise ValueError("Erro ao buscar imagem no S3")
+            
+        image_url = f"https://{bucket_name}.s3.amazonaws.com/{id_imagem}"
+        return image_url
+    except Exception as ex:
+        print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
+        return None
 
 def lambda_handler(event:any, context:any):
     try:
@@ -129,6 +149,10 @@ def lambda_handler(event:any, context:any):
         stores = get_all_stores(address_table, user_table)
         stores_with_500_range = get_stores_within_500_meters(cep, stores)
 
+        for store in stores_with_500_range:
+            store_image = store['id_Imagem']
+            store['imagem'] = get_store_image(store_image) if store_image else None
+
         return {
             "statusCode": 200,
             "body": json.dumps({"lojas": stores_with_500_range}, default=str),
@@ -158,10 +182,11 @@ def lambda_handler(event:any, context:any):
 if __name__ == "__main__":
    os.environ['TABLE_USER'] = 'Usuario'
    os.environ['ADRESS_STORE_TABLE'] = 'Loja_Endereco'
+   os.environ['BUCKET_NAME'] = 'loja-profile-pictures'
 
    event = {
         'queryStringParameters': {
-            'email': "teste3@gmail.com"
+            'email': "sergioadm120@gmail.com"
         }
    }
    print(lambda_handler(event, None))
