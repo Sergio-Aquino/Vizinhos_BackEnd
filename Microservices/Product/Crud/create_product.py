@@ -17,7 +17,7 @@ class Product:
     valor_custo: Decimal
     tamanho: str
     descricao: str
-    id_imagem: int
+    id_imagem: str
     disponivel: bool
     caracteristicas_IDs: List[str]
     id_Produto: str =  None
