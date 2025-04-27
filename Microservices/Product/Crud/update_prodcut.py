@@ -19,6 +19,7 @@ class Product:
     disponivel: bool
     caracteristicas_IDs: list[str]
     caracteristicas: List[str] = None
+    imagem_url: str = None
 
     @staticmethod
     def from_json(json_data: dict):
@@ -57,6 +58,27 @@ class Product:
         json_data['caracteristicas'] = []
         
         return Product(**json_data)
+    
+def get_product_image(id_imagem: int) -> str:
+    try:
+        s3 = boto3.client('s3')
+        bucket_name = os.environ['BUCKET_NAME']
+        
+        if not id_imagem:
+            raise ValueError("ID da imagem não informado")
+            
+        s3 = boto3.client('s3')
+        bucket_name = os.environ['BUCKET_NAME']
+
+        response = s3.get_object(Bucket=bucket_name, Key=id_imagem)
+        if response['ResponseMetadata']['HTTPStatusCode'] != 200:
+            raise ValueError("Erro ao buscar imagem no S3")
+            
+        image_url = f"https://{bucket_name}.s3.amazonaws.com/{id_imagem}"
+        return image_url
+    except Exception as ex:
+        print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
+        return None
 
 def lambda_handler(event: any, context:any):
     try:
@@ -123,7 +145,8 @@ def lambda_handler(event: any, context:any):
                 }, ConditionExpression="attribute_not_exists(fk_Carecteristica_id_Caracteristica) AND attribute_not_exists(fk_Produto_id_Produto)"
             )
 
-        
+        product.imagem_url = get_product_image(product.id_imagem)
+
         table_product.update_item(
             Key={'id_Produto': product.id_Produto},
             UpdateExpression="SET nome = :nome, fk_id_Categoria = :fk_id_Categoria, dias_vcto = :dias_vcto, valor_venda = :valor_venda, valor_custo = :valor_custo, tamanho = :tamanho, descricao = :descricao, id_imagem = :id_imagem, disponivel = :disponivel",
@@ -161,7 +184,8 @@ def lambda_handler(event: any, context:any):
                 "id_imagem": product.id_imagem,
                 "disponivel": product.disponivel,
                 "caracteristicas_IDs": product.caracteristicas_IDs,
-                "caracateristicas": product.caracteristicas
+                "caracateristicas": product.caracteristicas,
+                "imagem_url": product.imagem_url
             }, default=str)
         }
         
