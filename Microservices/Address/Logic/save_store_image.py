@@ -20,7 +20,7 @@ def lambda_handler(event:any, context:any):
         image_data = base64.b64decode(base64_image)
         file_name = f"{uuid.uuid4()}.{file_extension}"
 
-        s3.put_object(Bucket=bucket_name, Key=file_name, Body=image_data, ContentType=f'image/{file_extension}')
+        s3.put_object(Bucket=bucket_name, Key=file_name, Body=image_data, ContentType=f'image/{file_extension}', ACL='public-read')
 
         return {
             'statusCode': 200,
