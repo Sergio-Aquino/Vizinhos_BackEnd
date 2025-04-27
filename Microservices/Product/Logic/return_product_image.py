@@ -39,7 +39,7 @@ if __name__ == "__main__":
     os.environ['BUCKET_NAME'] = 'product-image-vizinhos'
     event = {
         'queryStringParameters': {
-            "id_imagem": "3f23edd0-1e35-4ba4-b835-89960a425f48.jpg"
+            "id_imagem": "d30b6a98-d2f5-4f6b-a238-f9dcbeeeccc3.jpg"
         }
     }  
     print(lambda_handler(event, None))
