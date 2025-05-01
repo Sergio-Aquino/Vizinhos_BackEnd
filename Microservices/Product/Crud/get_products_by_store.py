@@ -18,7 +18,7 @@ class Product:
     id_imagem: int
     disponivel: bool
     id_Produto: str
-    caracteristicas: List[str]
+    caracteristicas: List[dict]
     categoria: str = None
     imagem_url: str = None
     dt_fabricacao: str = None
@@ -119,7 +119,11 @@ def lambda_handler(event: any, context:any):
                 response_characteristic = characteristic_table.get_item(Key={'id_Caracteristica': characteristic_id})
                 if 'Item' not in response_characteristic:
                     continue
-                product.caracteristicas.append(response_characteristic['Item']['descricao'])
+                characteristic_data = {
+                    'id_Caracteristica': characteristic_id,
+                    'descricao': response_characteristic['Item']['descricao']
+                }
+                product.caracteristicas.append(characteristic_data)
 
             lote = table_lote.query(
                 IndexName='fk_id_Produto-index',
