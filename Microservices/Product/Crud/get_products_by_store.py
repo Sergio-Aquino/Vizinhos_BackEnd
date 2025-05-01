@@ -21,6 +21,9 @@ class Product:
     caracteristicas: List[str]
     categoria: str = None
     imagem_url: str = None
+    dt_fabricacao: str = None
+    valor_venda_desc: Decimal = None
+    quantidade: int = None
 
     @staticmethod
     def from_json(json_data: dict):
@@ -93,6 +96,7 @@ def lambda_handler(event: any, context:any):
             return None
         
         table_categoria = dynamodb.Table(os.environ['CATEGORY_TABLE'])
+        table_lote = dynamodb.Table(os.environ['LOT_TABLE'])
         products = []
         for item in response['Items']:
             product = Product.from_json(item)
@@ -116,6 +120,19 @@ def lambda_handler(event: any, context:any):
                 if 'Item' not in response_characteristic:
                     continue
                 product.caracteristicas.append(response_characteristic['Item']['descricao'])
+
+            lote = table_lote.query(
+                IndexName='fk_id_Produto-index',
+                KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Produto').eq(product.id_Produto)
+            )
+
+            if len(lote['Items']) > 1:
+                print(f"Produto {product.id_Produto} possui mais de um lote")
+                continue
+
+            product.dt_fabricacao = lote['Items'][0]['dt_fabricacao']
+            product.valor_venda_desc = lote['Items'][0]['valor_venda_desc']
+            product.quantidade = lote['Items'][0]['quantidade']
                 
         return {
             'statusCode': 200,
@@ -145,10 +162,11 @@ if __name__ == "__main__":
     os.environ['CATEGORY_TABLE'] = 'Categoria'
     os.environ['USER_TABLE'] = 'Usuario'
     os.environ['BUCKET_NAME'] = 'product-image-vizinhos'
+    os.environ['LOT_TABLE'] = 'Produto_Lote'
 
     event = {
         'queryStringParameters': {
-            'fk_id_Endereco': 312293703674932367
+            'fk_id_Endereco': 257236430777964605
         }
     }
 
