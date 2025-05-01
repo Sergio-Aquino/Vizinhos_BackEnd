@@ -5,15 +5,15 @@ import base64
 import uuid
 
 def lambda_handler(event:any, context:any):
-    base64_image = json.loads(event['body'])['image'] if 'image' in json.loads(event['body']) else None
-    if not base64_image:
-        raise ValueError("Imagem não informada")
+    try:
+        base64_image = json.loads(event['body'])['image'] if 'image' in json.loads(event['body']) else None
+        if not base64_image:
+            raise ValueError("Imagem não informada")
+        
+        file_extension = json.loads(event['body'])['file_extension'] if 'file_extension' in json.loads(event['body']) else None
+        if not file_extension:
+            raise ValueError("Extensão do arquivo não informada")
     
-    file_extension = json.loads(event['body'])['file_extension'] if 'file_extension' in json.loads(event['body']) else None
-    if not file_extension:
-        raise ValueError("Extensão do arquivo não informada")
-    
-    try: 
         s3 = boto3.client('s3')
         bucket_name = os.environ['BUCKET_NAME']
 
@@ -27,15 +27,11 @@ def lambda_handler(event:any, context:any):
             'body': json.dumps({"file_name": file_name})
         }
     except ValueError as err:
-        return {
-            'statusCode': 400,
-            'body': json.dumps('mensagem: ' + str(err))
-        }
+        print(err)
+        return None
     except Exception as ex:
-        return {
-            'statusCode': 500,
-            'body': json.dumps('Erro ao salvar imagem: ' + str(ex))
-        }
+        print(f"Erro ao salvar imagem: {ex}")
+        return None
     
 
 if __name__ == "__main__":
@@ -46,7 +42,7 @@ if __name__ == "__main__":
 
     event = {
         "body": json.dumps({
-            "image": base64_image,
+            "image": "",
             "file_extension": "jpg"
         })
     }

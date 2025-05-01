@@ -53,15 +53,15 @@ def get_all_stores(address_table, user_table):
     return stores
 
 def get_stores_within_500_meters(orign_cep, stores):
-    brasil_api_response = requests.get(f"https://brasilapi.com.br/api/cep/v2/{orign_cep}")
+    brasil_api_response = requests.get(f"https://cep.awesomeapi.com.br/json/{orign_cep}")
 
     if brasil_api_response.status_code != 200:
         raise ValueError("Problema ao validar CEP informado")
     
     brasil_api_response = brasil_api_response.json()
     
-    origin_latitude =float(brasil_api_response["location"]["coordinates"]["latitude"])
-    origin_longitude = float(brasil_api_response["location"]["coordinates"]["longitude"])
+    origin_latitude =float(brasil_api_response["lat"])
+    origin_longitude = float(brasil_api_response["lng"])
 
     stores_within_500_meters = []
     for store in stores:
@@ -69,13 +69,13 @@ def get_stores_within_500_meters(orign_cep, stores):
         if not store_cep:
             continue
 
-        store_cep_response = requests.get(f"https://brasilapi.com.br/api/cep/v2/{store_cep}")
+        store_cep_response = requests.get(f"https://cep.awesomeapi.com.br/json/{store_cep}")
         if store_cep_response.status_code != 200:
             continue
 
         address_data = store_cep_response.json()
-        store_latitude = float(address_data["location"]["coordinates"]["latitude"])
-        store_longitude = float(address_data["location"]["coordinates"]["longitude"])
+        store_latitude = float(address_data["lat"])
+        store_longitude = float(address_data["lng"])
 
         
         distance = haversine_distance(origin_latitude, origin_longitude, store_latitude, store_longitude)
