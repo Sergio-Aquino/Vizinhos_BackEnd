@@ -66,9 +66,6 @@ def get_product_image(id_imagem: int) -> str:
         
         if not id_imagem:
             raise ValueError("ID da imagem não informado")
-            
-        s3 = boto3.client('s3')
-        bucket_name = os.environ['BUCKET_NAME']
 
         response = s3.get_object(Bucket=bucket_name, Key=id_imagem)
         if response['ResponseMetadata']['HTTPStatusCode'] != 200:
@@ -99,14 +96,16 @@ def lambda_handler(event: any, context:any):
         
         s3 = boto3.client('s3')
         bucket_name = os.environ['BUCKET_NAME']
-        previous_image = response_table_product['Item']['id_imagem']
+        previous_image = response_table_product['Item']['id_imagem'] if 'id_imagem' in response_table_product['Item'] else None
 
         if previous_image:
-            s3.delete_object(
-                Bucket=bucket_name,
-                Key=previous_image
-            )
-            
+            if previous_image != product.id_imagem:
+                try:
+                    print(f"Deletando imagem anterior: {previous_image}")
+                    s3.delete_object(Bucket=bucket_name, Key=previous_image)
+                except Exception as ex:
+                    print(f"Erro ao deletar imagem anterior: {str(ex)}")
+                    
         table_category = dynamodb.Table(os.environ['CATEGORY_TABLE'])
         if 'Item' not in table_category.get_item(Key={'id_Categoria': product.fk_id_Categoria}):
             return {
