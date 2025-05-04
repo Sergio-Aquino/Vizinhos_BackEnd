@@ -24,6 +24,7 @@ class Product:
     dt_fabricacao: str = None
     valor_venda_desc: Decimal = None
     quantidade: int = None
+    id_lote: str = None
 
     @staticmethod
     def from_json(json_data: dict):
@@ -134,9 +135,12 @@ def lambda_handler(event: any, context:any):
                 print(f"Produto {product.id_Produto} possui mais de um lote")
                 continue
 
-            product.dt_fabricacao = lote['Items'][0]['dt_fabricacao']
-            product.valor_venda_desc = lote['Items'][0]['valor_venda_desc']
-            product.quantidade = lote['Items'][0]['quantidade']
+            if lote['Items']:
+                lote_item = lote['Items'][0]
+                product.dt_fabricacao = lote_item.get('dt_fabricacao', None)
+                product.valor_venda_desc = lote_item.get('valor_venda_desc', None)
+                product.quantidade = lote_item.get('quantidade', None)
+                product.id_lote = lote_item.get('id_Lote', None)
                 
         return {
             'statusCode': 200,
