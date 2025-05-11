@@ -49,6 +49,7 @@ def get_product_image(id_imagem: int) -> str:
         image_url = f"https://{bucket_name}.s3.amazonaws.com/{id_imagem}"
         return image_url
     except Exception as ex:
+        print("message: " + str(ex))
         print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
         return None
 
@@ -57,6 +58,7 @@ def lambda_handler(event: any, context:any):
     try:
         fk_id_Endereco = event.get('queryStringParameters', {}).get('fk_id_Endereco')
         if not fk_id_Endereco:
+            print("message: fk_id_Endereco é obrigatório")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'message': 'fk_id_Endereco é obrigatório'})
@@ -75,12 +77,14 @@ def lambda_handler(event: any, context:any):
         )
 
         if 'Items' not in response_user or len(response_user['Items']) == 0:
+            print("message: Não foi possível relacionar a loja com um vendedor")
             return {
                 'statusCode': 404,
                 'body': json.dumps({'message':'Não foi possível relacionar a loja com um vendedor'})
             }
         
         if response_user['Items'][0]['Usuario_Tipo'] not in ['seller', 'customer_seller']:
+            print("message: Apenas lojas possuem produtos")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'message': 'Apenas lojas possuem produtos'})
@@ -148,16 +152,19 @@ def lambda_handler(event: any, context:any):
         }
 
     except TypeError as ex:
+        print("message: " + str(ex))
         return {
             'statusCode': 400,
             'body': json.dumps({'message': str(ex)}, default=str)
         }
     except KeyError as err:
+        print("message: " + str(err))
         return {
             "statusCode": 400,
             'body': json.dumps({'message': f'Campo obrigatório não encontrado: {str(err)}'}, default=str)
         }
     except Exception as ex:
+        print("message: " + str(ex))
         return {
             'statusCode': 500,
             'body': json.dumps({'message': "Erro ao retornar produto: " + str(ex)}, default=str)
