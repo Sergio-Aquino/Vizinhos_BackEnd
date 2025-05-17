@@ -18,6 +18,7 @@ class Product:
     id_imagem: str
     disponivel: bool
     caracteristicas_IDs: list[str]
+    flag_oferta: bool
     caracteristicas: List[str] = None
     imagem_url: str = None
 
@@ -145,10 +146,11 @@ def lambda_handler(event: any, context:any):
             )
 
         product.imagem_url = get_product_image(product.id_imagem)
-
+        product.flag_oferta = False
+        
         table_product.update_item(
             Key={'id_Produto': product.id_Produto},
-            UpdateExpression="SET nome = :nome, fk_id_Categoria = :fk_id_Categoria, dias_vcto = :dias_vcto, valor_venda = :valor_venda, valor_custo = :valor_custo, tamanho = :tamanho, descricao = :descricao, id_imagem = :id_imagem, disponivel = :disponivel",
+            UpdateExpression="SET nome = :nome, fk_id_Categoria = :fk_id_Categoria, dias_vcto = :dias_vcto, valor_venda = :valor_venda, valor_custo = :valor_custo, tamanho = :tamanho, descricao = :descricao, id_imagem = :id_imagem, disponivel = :disponivel, flag_oferta = :flag_oferta",
             ExpressionAttributeValues={
                 ':nome': product.nome,
                 ':fk_id_Categoria': product.fk_id_Categoria,
@@ -158,7 +160,8 @@ def lambda_handler(event: any, context:any):
                 ':tamanho': product.tamanho,
                 ':descricao': product.descricao,
                 ':id_imagem': product.id_imagem,
-                ':disponivel': product.disponivel
+                ':disponivel': product.disponivel,
+                ':flag_oferta': product.flag_oferta
             },
         )
 
@@ -184,7 +187,8 @@ def lambda_handler(event: any, context:any):
                 "disponivel": product.disponivel,
                 "caracteristicas_IDs": product.caracteristicas_IDs,
                 "caracateristicas": product.caracteristicas,
-                "imagem_url": product.imagem_url
+                "imagem_url": product.imagem_url,
+                "flag_oferta": product.flag_oferta
             }, default=str)
         }
         
