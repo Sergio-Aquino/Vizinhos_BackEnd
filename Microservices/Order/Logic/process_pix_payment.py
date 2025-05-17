@@ -54,6 +54,7 @@ def lambda_handler(event:any, context:any):
             }
         return json.dumps(
             {
+                "transaction_ammount": payment_response["transaction_amount"],
                 "payment_id": payment_response["id"],
                 "collector_id": payment_response["collector_id"],
                 "qr_code": payment_response["point_of_interaction"]["transaction_data"]["qr_code"],

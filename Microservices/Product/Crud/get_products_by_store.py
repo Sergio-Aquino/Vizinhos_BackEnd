@@ -19,6 +19,7 @@ class Product:
     disponivel: bool
     id_Produto: str
     caracteristicas: List[dict]
+    flag_oferta: bool
     categoria: str = None
     imagem_url: str = None
     dt_fabricacao: str = None
@@ -181,7 +182,7 @@ if __name__ == "__main__":
 
     event = {
         'queryStringParameters': {
-            'fk_id_Endereco': 257236430777964605
+            'fk_id_Endereco': 185962218056648587
         }
     }
 

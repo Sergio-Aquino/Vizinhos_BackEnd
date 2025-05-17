@@ -15,10 +15,11 @@ class Order:
     valor: Decimal
     quantidade: int
     tipo_entrega: str
-    status_pedido: str = "Aguardando confirmação"
+    status_pedido: str = "Pendente"
     data_pedido: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     hora_atualizacao: str = data_pedido
     id_Pedido: str = None
+    id_Pagamento: str = None
 
 
     @staticmethod

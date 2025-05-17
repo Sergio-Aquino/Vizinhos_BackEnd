@@ -21,6 +21,7 @@ class Product:
     disponivel: bool
     caracteristicas_IDs: List[str]
     id_Produto: str =  None
+    flag_oferta: bool = False
 
 
     @staticmethod
@@ -131,7 +132,8 @@ def lambda_handler(event:any, context:any):
             'tamanho': product.tamanho,
             'descricao': product.descricao,
             'id_imagem': product.id_imagem,
-            'disponivel': product.disponivel
+            'disponivel': product.disponivel,
+            'flag_oferta': product.flag_oferta,
         }, ConditionExpression="attribute_not_exists(id_Produto)")
 
         return {
@@ -180,7 +182,7 @@ if __name__ == "__main__":
             "descricao": 'Produto de teste',
             "id_imagem": "0ca0c299-c2b7-4d2a-ac34-02c6ce82bb2a.jpg",
             "disponivel": True,
-            "caracteristicas_IDs": [851757438215884457, 367612793554248295, 125465533661467574]
+            "caracteristicas_IDs": ["a4b6bf35-78ea-4cca-9429-6900decc0112"]
         })
     }
 
