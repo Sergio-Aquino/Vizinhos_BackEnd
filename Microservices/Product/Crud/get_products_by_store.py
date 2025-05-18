@@ -39,9 +39,6 @@ def get_product_image(id_imagem: int) -> str:
         
         if not id_imagem:
             raise ValueError("ID da imagem não informado")
-            
-        s3 = boto3.client('s3')
-        bucket_name = os.environ['BUCKET_NAME']
 
         response = s3.get_object(Bucket=bucket_name, Key=id_imagem)
         if response['ResponseMetadata']['HTTPStatusCode'] != 200:
