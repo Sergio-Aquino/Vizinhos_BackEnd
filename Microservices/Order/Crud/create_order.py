@@ -37,7 +37,7 @@ class Order:
     fk_Usuario_cpf: str
     valor: Decimal
     tipo_entrega: str
-    status_pedido: str = "Pendente"
+    status_pedido: str = "Aguardando Pagamento"
     data_pedido: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     hora_atualizacao: str = data_pedido
     item_pedido: List[Order_Item] = None
