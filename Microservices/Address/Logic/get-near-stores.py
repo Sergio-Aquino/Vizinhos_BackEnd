@@ -5,10 +5,18 @@ import requests
 import re
 from math import radians, sin, cos, sqrt, atan2
 
+USER_CACHE = {}
+ADDRESS_CACHE = {}
+IMAGE_CACHE = {}
+CEP_CACHE = {}
+STORE_CACHE = {}
+
+dynamodb = boto3.resource('dynamodb')
+s3_client = boto3.client('s3')
+
 def is_valid_email(email: str) -> bool:
     email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return re.match(email_regex, email) is not None
-
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     R = 6371000
@@ -27,9 +35,89 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     distance = R * c
     return distance
 
+def get_table(table_env_var):
+    table_name = os.environ[table_env_var]
+    return dynamodb.Table(table_name)
 
-def get_all_stores(address_table, user_table):
-    addresses = address_table.scan()
+def get_cep_coordinates(cep):
+    if cep in CEP_CACHE:
+        return CEP_CACHE[cep]
+    
+    try:
+        response = requests.get(f"https://cep.awesomeapi.com.br/json/{cep}")
+        if response.status_code != 200:
+            return None
+        
+        data = response.json()
+        coordinates = {
+            'latitude': float(data["lat"]),
+            'longitude': float(data["lng"])
+        }
+        
+        CEP_CACHE[cep] = coordinates
+        return coordinates
+    except Exception as ex:
+        print(f"Erro ao buscar coordenadas do CEP {cep}: {str(ex)}")
+        return None
+
+def get_user_by_email(email):
+    if email in USER_CACHE:
+        return USER_CACHE[email]
+    
+    user_table = get_table('TABLE_USER')
+    response = user_table.query(
+        IndexName='email-index',
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('email').eq(email)
+    )
+    
+    if 'Items' in response and len(response['Items']) > 0:
+        USER_CACHE[email] = response['Items'][0]
+        return response['Items'][0]
+    
+    return None
+
+def get_address(address_id):
+    if address_id in ADDRESS_CACHE:
+        return ADDRESS_CACHE[address_id]
+    
+    address_table = get_table('ADRESS_STORE_TABLE')
+    response = address_table.get_item(Key={'id_Endereco': address_id})
+    
+    if 'Item' in response:
+        ADDRESS_CACHE[address_id] = response['Item']
+        return response['Item']
+    
+    return None
+
+def get_store_image(id_imagem):
+    if not id_imagem:
+        return None
+    
+    if id_imagem in IMAGE_CACHE:
+        return IMAGE_CACHE[id_imagem]
+    
+    try:
+        bucket_name = os.environ['BUCKET_NAME']
+        image_url = f"https://{bucket_name}.s3.amazonaws.com/{id_imagem}"
+        
+        IMAGE_CACHE[id_imagem] = image_url
+        return image_url
+    except Exception as ex:
+        print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
+        return None
+
+def get_all_stores(limit=100):
+    if 'all_stores' in STORE_CACHE:
+        return STORE_CACHE['all_stores']
+    
+    address_table = get_table('ADRESS_STORE_TABLE')
+    user_table = get_table('TABLE_USER')
+    
+    scan_params = {
+        'Limit': limit
+    }
+    
+    addresses = address_table.scan(**scan_params)
     if 'Items' not in addresses:
         return []
     
@@ -49,19 +137,17 @@ def get_all_stores(address_table, user_table):
            continue
         
         stores.append(address)
-
+    
+    STORE_CACHE['all_stores'] = stores
     return stores
 
-def get_stores_within_500_meters(orign_cep, stores):
-    brasil_api_response = requests.get(f"https://cep.awesomeapi.com.br/json/{orign_cep}")
-
-    if brasil_api_response.status_code != 200:
+def get_stores_within_500_meters(origin_cep, stores):
+    origin_coords = get_cep_coordinates(origin_cep)
+    if not origin_coords:
         raise ValueError("Problema ao validar CEP informado")
     
-    brasil_api_response = brasil_api_response.json()
-    
-    origin_latitude =float(brasil_api_response["lat"])
-    origin_longitude = float(brasil_api_response["lng"])
+    origin_latitude = origin_coords['latitude']
+    origin_longitude = origin_coords['longitude']
 
     stores_within_500_meters = []
     for store in stores:
@@ -69,14 +155,12 @@ def get_stores_within_500_meters(orign_cep, stores):
         if not store_cep:
             continue
 
-        store_cep_response = requests.get(f"https://cep.awesomeapi.com.br/json/{store_cep}")
-        if store_cep_response.status_code != 200:
+        store_coords = get_cep_coordinates(store_cep)
+        if not store_coords:
             continue
 
-        address_data = store_cep_response.json()
-        store_latitude = float(address_data["lat"])
-        store_longitude = float(address_data["lng"])
-
+        store_latitude = store_coords['latitude']
+        store_longitude = store_coords['longitude']
         
         distance = haversine_distance(origin_latitude, origin_longitude, store_latitude, store_longitude)
 
@@ -85,31 +169,13 @@ def get_stores_within_500_meters(orign_cep, stores):
 
     return stores_within_500_meters
 
-def get_store_image(id_imagem):
+def lambda_handler(event: any, context: any):
     try:
-        s3 = boto3.client('s3')
-        bucket_name = os.environ['BUCKET_NAME']
+        query_params = event.get('queryStringParameters', {}) or {}
+        email = query_params.get('email')
         
-        if not id_imagem:
-            raise ValueError("ID da imagem não informado")
-            
-        s3 = boto3.client('s3')
-        bucket_name = os.environ['BUCKET_NAME']
-
-        response = s3.get_object(Bucket=bucket_name, Key=id_imagem)
-        if response['ResponseMetadata']['HTTPStatusCode'] != 200:
-            raise ValueError("Erro ao buscar imagem no S3")
-            
-        image_url = f"https://{bucket_name}.s3.amazonaws.com/{id_imagem}"
-        return image_url
-    except Exception as ex:
-        print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
-        return None
-
-def lambda_handler(event:any, context:any):
-    try:
-        email = event.get('queryStringParameters', {}).get('email', None)
-
+        limit = int(query_params.get('limit', '100'))
+        
         if not email:
             raise ValueError("email não fornecido")
         
@@ -119,65 +185,64 @@ def lambda_handler(event:any, context:any):
         if not is_valid_email(email):
             raise ValueError("email inválido")
 
-        dynamodb = boto3.resource('dynamodb')
-        user_table = dynamodb.Table(os.environ['TABLE_USER'])
-
-        response_user = user_table.query(
-            IndexName='email-index',
-            KeyConditionExpression=boto3.dynamodb.conditions.Key('email').eq(email)
-        )
-
-        if 'Items' not in response_user or len(response_user['Items']) == 0:
+        user = get_user_by_email(email)
+        if not user:
+            print(f"Usuário não encontrado: {email}")
             return {
                 'statusCode': 404,
                 'body': json.dumps({'message': "Usuário não encontrado"}, default=str)
             }
         
-        address_id = int(response_user['Items'][0]['fk_id_Endereco'])
+        address_id = int(user['fk_id_Endereco'])
 
-        address_table = dynamodb.Table(os.environ['ADRESS_STORE_TABLE'])
-        response_address = address_table.get_item(Key={'id_Endereco': address_id})
-
-        if 'Item' not in response_address:
+        address = get_address(address_id)
+        if not address:
+            print(f"Endereço do usuário não encontrado: {address_id}")
             return {
                 'statusCode': 404,
-                'body': json.dumps({'message': "Endereço do usuário encontrado"}, default=str)
+                'body': json.dumps({'message': "Endereço do usuário não encontrado"}, default=str)
             }
 
-        cep = response_address['Item']['cep']
+        cep = address['cep']
 
-        stores = get_all_stores(address_table, user_table)
-        stores_with_500_range = get_stores_within_500_meters(cep, stores)
+        stores = get_all_stores(limit)
+        
+        stores_within_500_range = get_stores_within_500_meters(cep, stores)
 
-        for store in stores_with_500_range:
-            store_image = store['id_Imagem']
+        for store in stores_within_500_range:
+            store_image = store.get('id_Imagem')
             store['imagem'] = get_store_image(store_image) if store_image else None
 
         return {
             "statusCode": 200,
-            "body": json.dumps({"lojas": stores_with_500_range}, default=str),
+            "body": json.dumps({"lojas": stores_within_500_range}, default=str),
         }
 
     except KeyError as err:
+        print(f"Campo obrigatório não informado: {str(err)}")
         return {
             'statusCode': 400,
             'body': json.dumps({'message': f'Campo obrigatório não informado: {str(err)}'}, default=str),
         }
     except ValueError as err:
+        print(f"message: {str(err)}")
         return {
             'statusCode': 400,
             'body': json.dumps({'message': str(err)}, default=str),
         }
     except TypeError as err:
+        print(f"message: {str(err)}")
         return {
             'statusCode': 400,
             'body': json.dumps({'message': str(err)}, default=str),
         }
     except Exception as ex:
+        print(f"message: {str(ex)}")
         return {
             'statusCode': 500,
             'body': json.dumps({"message": "Erro ao buscar lojas próximas: " + str(ex)}, default=str),
         }
+
 
 if __name__ == "__main__":
    os.environ['TABLE_USER'] = 'Usuario'

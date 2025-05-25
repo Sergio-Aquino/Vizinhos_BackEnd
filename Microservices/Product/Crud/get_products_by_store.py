@@ -19,11 +19,13 @@ class Product:
     disponivel: bool
     id_Produto: str
     caracteristicas: List[dict]
+    flag_oferta: bool
     categoria: str = None
     imagem_url: str = None
     dt_fabricacao: str = None
     valor_venda_desc: Decimal = None
     quantidade: int = None
+    id_lote: str = None
 
     @staticmethod
     def from_json(json_data: dict):
@@ -37,9 +39,6 @@ def get_product_image(id_imagem: int) -> str:
         
         if not id_imagem:
             raise ValueError("ID da imagem não informado")
-            
-        s3 = boto3.client('s3')
-        bucket_name = os.environ['BUCKET_NAME']
 
         response = s3.get_object(Bucket=bucket_name, Key=id_imagem)
         if response['ResponseMetadata']['HTTPStatusCode'] != 200:
@@ -48,6 +47,7 @@ def get_product_image(id_imagem: int) -> str:
         image_url = f"https://{bucket_name}.s3.amazonaws.com/{id_imagem}"
         return image_url
     except Exception as ex:
+        print("message: " + str(ex))
         print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
         return None
 
@@ -56,6 +56,7 @@ def lambda_handler(event: any, context:any):
     try:
         fk_id_Endereco = event.get('queryStringParameters', {}).get('fk_id_Endereco')
         if not fk_id_Endereco:
+            print("message: fk_id_Endereco é obrigatório")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'message': 'fk_id_Endereco é obrigatório'})
@@ -74,12 +75,14 @@ def lambda_handler(event: any, context:any):
         )
 
         if 'Items' not in response_user or len(response_user['Items']) == 0:
+            print("message: Não foi possível relacionar a loja com um vendedor")
             return {
                 'statusCode': 404,
                 'body': json.dumps({'message':'Não foi possível relacionar a loja com um vendedor'})
             }
         
         if response_user['Items'][0]['Usuario_Tipo'] not in ['seller', 'customer_seller']:
+            print("message: Apenas lojas possuem produtos")
             return {
                 'statusCode': 400,
                 'body': json.dumps({'message': 'Apenas lojas possuem produtos'})
@@ -134,9 +137,12 @@ def lambda_handler(event: any, context:any):
                 print(f"Produto {product.id_Produto} possui mais de um lote")
                 continue
 
-            product.dt_fabricacao = lote['Items'][0]['dt_fabricacao']
-            product.valor_venda_desc = lote['Items'][0]['valor_venda_desc']
-            product.quantidade = lote['Items'][0]['quantidade']
+            if lote['Items']:
+                lote_item = lote['Items'][0]
+                product.dt_fabricacao = lote_item.get('dt_fabricacao', None)
+                product.valor_venda_desc = lote_item.get('valor_venda_desc', None)
+                product.quantidade = lote_item.get('quantidade', None)
+                product.id_lote = lote_item.get('id_Lote', None)
                 
         return {
             'statusCode': 200,
@@ -144,16 +150,19 @@ def lambda_handler(event: any, context:any):
         }
 
     except TypeError as ex:
+        print("message: " + str(ex))
         return {
             'statusCode': 400,
             'body': json.dumps({'message': str(ex)}, default=str)
         }
     except KeyError as err:
+        print("message: " + str(err))
         return {
             "statusCode": 400,
             'body': json.dumps({'message': f'Campo obrigatório não encontrado: {str(err)}'}, default=str)
         }
     except Exception as ex:
+        print("message: " + str(ex))
         return {
             'statusCode': 500,
             'body': json.dumps({'message': "Erro ao retornar produto: " + str(ex)}, default=str)
@@ -170,7 +179,7 @@ if __name__ == "__main__":
 
     event = {
         'queryStringParameters': {
-            'fk_id_Endereco': 257236430777964605
+            'fk_id_Endereco': 185962218056648587
         }
     }
 

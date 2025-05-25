@@ -30,6 +30,7 @@ class Product:
     id_imagem: int
     disponivel: bool
     id_Produto: str
+    flag_oferta: bool
     caracteristicas: list[dict] = None
     categoria: str = None
     imagem_url: str = None
@@ -52,6 +53,7 @@ class Store:
     id_Imagem: str
     tipo_Entrega: str
     imagem_url: str
+    access_token: str
     produtos: list[Product] = None
 
     @staticmethod
@@ -209,7 +211,7 @@ if __name__ == "__main__":
     os.environ['BATCH_TABLE'] = 'Produto_Lote'
     event = {
         'queryStringParameters': {
-            'id_loja': '167868419853349668'
+            'id_loja': '185962218056648587'
         }
     }
     response = lambda_handler(event, None)
