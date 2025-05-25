@@ -3,6 +3,7 @@ import boto3
 import os
 import datetime
 import mercadopago
+from zoneinfo import ZoneInfo
 
 
 MERCADO_PAGO_STATUS_MAP = {
@@ -32,7 +33,7 @@ def refresh_status_pagamento(access_token: str, order: dict) -> None:
     if order['status_pedido'] == "Pago":
         order['id_Transacao'] = payment['response']['transaction_details']['transaction_id']
 
-    order['hora_atualizacao'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    order['hora_atualizacao'] = datetime.datetime.now(ZoneInfo("America/Sao_Paulo")) .strftime("%Y-%m-%d %H:%M:%S")
 
 
 def lambda_handler(event:any, context:any): 

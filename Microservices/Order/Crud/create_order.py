@@ -8,6 +8,7 @@ import uuid
 import re
 from typing import List
 import mercadopago
+from zoneinfo import ZoneInfo
 
 @dataclass
 class Order_Item:
@@ -38,7 +39,7 @@ class Order:
     valor: Decimal
     tipo_entrega: str
     status_pedido: str = "Aguardando Pagamento"
-    data_pedido: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data_pedido: str = datetime.datetime.now(ZoneInfo("America/Sao_Paulo")) .strftime("%Y-%m-%d %H:%M:%S")
     hora_atualizacao: str = data_pedido
     item_pedido: List[Order_Item] = None
     id_Pedido: str = None

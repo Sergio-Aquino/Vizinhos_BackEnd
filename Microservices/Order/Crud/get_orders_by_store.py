@@ -4,115 +4,180 @@ import os
 from dataclasses import dataclass
 from decimal import Decimal
 
+PRODUCT_CACHE = {}
+LOTE_CACHE = {}
+IMAGE_CACHE = {}
+
+dynamodb = boto3.resource('dynamodb')
+s3_client = boto3.client('s3')
+
+
 @dataclass
 class ProductResponse:
     nome_produto: str
     imagem_produto: str
     quantidade: int
-    valor_unitario: Decimal
+    valor_unitario: float
 
+    def to_dict(self):
+        return {
+            'nome_produto': self.nome_produto,
+            'imagem_produto': self.imagem_produto,
+            'quantidade': int(self.quantidade) if isinstance(self.quantidade, Decimal) else self.quantidade,
+            'valor_unitario': float(self.valor_unitario) if isinstance(self.valor_unitario, Decimal) else self.valor_unitario
+        }
 
 @dataclass
 class OrderResponse:
     id_Pedido: str
     status_pedido: str
-    valor_total: Decimal
+    valor_total: float
     data_pedido: str
+    AvaliacaoFeita: bool = False
     produtos: list[ProductResponse] = None
 
-def get_product_name(lote_id: str):
-    dynamodb = boto3.resource('dynamodb')
-    table_lote = dynamodb.Table(os.environ['TABLE_LOTE'])
-    table_product = dynamodb.Table(os.environ['TABLE_PRODUCT'])
+    def to_dict(self):
+        return {
+            'id_Pedido': self.id_Pedido,
+            'status_pedido': self.status_pedido,
+            'valor_total': float(self.valor_total) if isinstance(self.valor_total, Decimal) else self.valor_total,
+            'data_pedido': self.data_pedido,
+            'AvaliacaoFeita': self.AvaliacaoFeita,
+            'produtos': [p.to_dict() for p in self.produtos] if self.produtos else []
+        }
+
+def get_table(table_env_var):
+    table_name = os.environ[table_env_var]
+    return dynamodb.Table(table_name)
+
+def convert_decimal_values(item):
+    if isinstance(item, dict):
+        return {k: convert_decimal_values(v) for k, v in item.items()}
+    elif isinstance(item, list):
+        return [convert_decimal_values(v) for v in item]
+    elif isinstance(item, Decimal):
+        return int(item) if item % 1 == 0 else float(item)
+    return item
+
+def get_lote(lote_id: str):
+    if lote_id in LOTE_CACHE:
+        return LOTE_CACHE[lote_id]
+    
+    table_lote = get_table('TABLE_LOTE')
     response_lote = table_lote.get_item(Key={'id_Lote': lote_id})
+    
+    if 'Item' in response_lote:
+        item = convert_decimal_values(response_lote['Item'])
+        LOTE_CACHE[lote_id] = item
+        return item
+    
+    print(f"Nenhum lote encontrado com o id: {lote_id}")
+    return None
 
-    if 'Item' not in response_lote:
-        print("Nenhum lote encontrado com o id: " + str(lote_id))
+def get_product(product_id: str):
+    if product_id in PRODUCT_CACHE:
+        return PRODUCT_CACHE[product_id]
+    
+    table_product = get_table('TABLE_PRODUCT')
+    response_product = table_product.get_item(Key={'id_Produto': product_id})
+    
+    if 'Item' in response_product:
+        item = convert_decimal_values(response_product['Item'])
+        PRODUCT_CACHE[product_id] = item
+        return item
+    
+    print(f"Nenhum produto encontrado com o id: {product_id}")
+    return None
+
+def get_product_name(lote_id: str):
+    lote = get_lote(lote_id)
+    if not lote:
         return None
     
-    lote = response_lote['Item']
-    response_product = table_product.get_item(Key={'id_Produto': lote['fk_id_Produto']})
-
-    if 'Item' not in response_product:
-        print("Nenhum produto encontrado com o id: " + str(lote['fk_id_Produto']))
+    product = get_product(lote['fk_id_Produto'])
+    if not product:
         return None
     
-    product = response_product['Item']
     return product['nome']
 
 def get_image(id_imagem: str):
+    if not id_imagem:
+        return None
+    
+    if id_imagem in IMAGE_CACHE:
+        return IMAGE_CACHE[id_imagem]
+    
     try:
-        s3 = boto3.client('s3')
         bucket_name = os.environ['BUCKET_NAME']
-        
-        if not id_imagem:
-            raise ValueError("ID da imagem não informado")
-
-        response = s3.get_object(Bucket=bucket_name, Key=id_imagem)
-        if response['ResponseMetadata']['HTTPStatusCode'] != 200:
-            raise ValueError("Erro ao buscar imagem no S3")
-            
         image_url = f"https://{bucket_name}.s3.amazonaws.com/{id_imagem}"
+        
+        IMAGE_CACHE[id_imagem] = image_url
         return image_url
     except Exception as ex:
-        print("message: " + str(ex))
         print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
         return None
     
 def get_product_image(lote_id: str):
-    dynamodb = boto3.resource('dynamodb')
-    table_lote = dynamodb.Table(os.environ['TABLE_LOTE'])
-    table_product = dynamodb.Table(os.environ['TABLE_PRODUCT'])
-    response_lote = table_lote.get_item(Key={'id_Lote': lote_id})
-
-    if 'Item' not in response_lote:
-        print("Nenhum lote encontrado com o id: " + str(lote_id))
+    lote = get_lote(lote_id)
+    if not lote:
         return None
     
-    lote = response_lote['Item']
-    response_product = table_product.get_item(Key={'id_Produto': lote['fk_id_Produto']})
-
-    if 'Item' not in response_product:
-        print("Nenhum produto encontrado com o id: " + str(lote['fk_id_Produto']))
+    product = get_product(lote['fk_id_Produto'])
+    if not product:
         return None
     
-    product = response_product['Item']
-    product_image = get_image(product['id_imagem'])
+    return get_image(product['id_imagem'])
 
-    return product_image
+def get_order_items(order_id: str):
+    table_item_order = get_table('TABLE_ITEM_ORDER')
     
-
-def get_order_products(order: OrderResponse):
-    dynamodb = boto3.resource('dynamodb')
-    table_item_order = dynamodb.Table(os.environ['TABLE_ITEM_ORDER'])
-
     response_item_order = table_item_order.query(
         IndexName='fk_id_Pedido-index',
-        KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Pedido').eq(order.id_Pedido)
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Pedido').eq(order_id)
     )
-
+    
     if 'Items' not in response_item_order or len(response_item_order['Items']) == 0:
-        print("Nenhum item encontrado para o pedido: " + str(order.id_Pedido))
+        print(f"Nenhum item encontrado para o pedido: {order_id}")
+        return []
+    
+    return [convert_decimal_values(item) for item in response_item_order['Items']]
+
+def get_order_products(order: OrderResponse):
+    items = get_order_items(order.id_Pedido)
+    if not items:
         return None
     
-    items = response_item_order['Items']
     product_list = []
     for item in items:
-        item_response = {
-            'nome_produto': get_product_name(item['fk_id_Lote']),
-            'imagem_produto': get_product_image(item['fk_id_Lote']),
-            'quantidade': item['quantidade_item'],
-            'valor_unitario': item['preco_unitario']
-        }
-        product_list.append(item_response)
+        lote_id = item['fk_id_Lote']
+        
+        product_response = ProductResponse(
+            nome_produto=get_product_name(lote_id),
+            imagem_produto=get_product_image(lote_id),
+            quantidade=item['quantidade_item'],
+            valor_unitario=item['preco_unitario']
+        )
+        product_list.append(product_response)
     
     return product_list
-
     
-def lambda_handler(event: any, context:any): 
+def lambda_handler(event: any, context: any): 
     try:
-        store_id = event.get('queryStringParameters', {}).get('id_Loja', None)
-        store_id = int(store_id) if store_id else None
+        query_params = event.get('queryStringParameters', {}) or {}
+        store_id = query_params.get('id_Loja')
+        
+        limit = int(query_params.get('limit', '10'))
+        include_products = query_params.get('include_products', 'true').lower() == 'true'
+        
+        try:
+            store_id = int(store_id) if store_id else None
+        except ValueError:
+            print("ID da loja inválido.")
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"message": "ID da loja inválido."})
+            }
+            
         if not store_id:
             print("ID da loja não fornecido.")
             return {
@@ -120,72 +185,72 @@ def lambda_handler(event: any, context:any):
                 "body": json.dumps({"message": "ID da loja não fornecido."})
             }
         
-        dynamodb = boto3.resource('dynamodb')
-        table_order = dynamodb.Table(os.environ['TABLE_ORDER'])
-        orders = table_order.query(
-            IndexName='fk_id_Endereco-index',
-            KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(store_id)
-        )
+        table_order = get_table('TABLE_ORDER')
+        query_params_dynamo = {
+            'IndexName': 'fk_id_Endereco-index',
+            'KeyConditionExpression': boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(store_id),
+            'Limit': limit
+        }
+        
+        response_orders = table_order.query(**query_params_dynamo)
 
-        if 'Items' not in orders or len(orders['Items']) == 0:
-            print("Nenhum pedido encontrado para a loja: " + str(store_id))
+        if 'Items' not in response_orders or len(response_orders['Items']) == 0:
+            print(f"Nenhum pedido encontrado para a loja: {store_id}")
             return {
                 "statusCode": 404,
-                "body": json.dumps({"message": "Nenhum pedido encontrado para a loja: " + str(store_id)}, default=str)
+                "body": json.dumps({"message": f"Nenhum pedido encontrado para a loja: {store_id}"})
             }
         
-        orders = orders['Items']
+        orders = [convert_decimal_values(order) for order in response_orders['Items']]
         order_list = []
+        
         for order in orders:
             order_response = OrderResponse(
                 id_Pedido=order['id_Pedido'],
                 status_pedido=order['status_pedido'],
                 valor_total=order['valor'],
                 data_pedido=order['data_pedido'],
+                AvaliacaoFeita=order.get('AvaliacaoFeita', False)
             )
             order_list.append(order_response)
         
-        for order in order_list:
-            produtos = get_order_products(order)
-            if produtos:
-                order.produtos = []
-                for produto in produtos:
-                    product_response = ProductResponse(
-                        nome_produto=produto['nome_produto'],
-                        imagem_produto=produto['imagem_produto'],
-                        quantidade=produto['quantidade'],
-                        valor_unitario=produto['valor_unitario']
-                    )
-                    order.produtos.append(product_response)
+        if include_products:
+            for order_resp in order_list:
+                produtos = get_order_products(order_resp)
+                if produtos:
+                    order_resp.produtos = produtos
+
+        next_token = None
+        if 'LastEvaluatedKey' in response_orders:
+            last_key = convert_decimal_values(response_orders['LastEvaluatedKey'])
+            next_token = json.dumps(last_key)
+        
+        response_body = {
+            "pedidos": [order.to_dict() for order in order_list]
+        }
+        
+        if next_token:
+            response_body["nextToken"] = next_token
 
         return {
             "statusCode": 200,
-            "body": json.dumps(
-                {
-                    "pedidos": [
-                        {
-                            **order.__dict__,
-                            "produtos": [p.__dict__ for p in order.produtos] if order.produtos else []
-                        }
-                        for order in order_list
-                    ]
-                },
-                default=str
-        )
+            "body": json.dumps(response_body)
         }
 
     except KeyError as err:
         print(f"Campo obrigatório não encontrado: {str(err)}")
         return {
             "statusCode": 400,
-            "body": json.dumps({"message": f"Campo obrigatório não encontrado: {str(err)}"}, default=str)
+            "body": json.dumps({"message": f"Campo obrigatório não encontrado: {str(err)}"})
         }
     except Exception as ex:
         print(f"Erro ao pegar pedidos: {str(ex)}")
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": "Erro ao pegar pedidos: " + str(ex),}, default=str)
+            "body": json.dumps({"message": f"Erro ao pegar pedidos: {str(ex)}"})
         }
+
+
     
 
 if __name__ == "__main__":
