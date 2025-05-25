@@ -16,6 +16,7 @@ class Address_Store:
     descricao_Loja: str = None
     id_Imagem: str = None
     tipo_Entrega: str = None
+    access_token: str = None
 
 
     @staticmethod
@@ -74,7 +75,8 @@ class Address_Store:
                 nome_Loja=json_data['nome_Loja'],
                 descricao_Loja=json_data['descricao_Loja'],
                 id_Imagem=json_data['id_Imagem'],
-                tipo_Entrega=json_data['tipo_Entrega']
+                tipo_Entrega=json_data['tipo_Entrega'],
+                access_token=json_data['access_token']
             )
 
 def validate_cep(cep:str):
@@ -110,7 +112,7 @@ def lambda_handler(event:any, context:any):
         else:
             address_store_table.update_item(
                 Key={'id_Endereco': address_store.id_Endereco},
-                UpdateExpression="SET cep = :cep, logradouro = :logradouro, numero = :numero, complemento = :complemento, nome_Loja = :nome_Loja, descricao_Loja = :descricao_Loja, id_Imagem = :id_Imagem, tipo_Entrega = :tipo_Entrega",
+                UpdateExpression="SET cep = :cep, logradouro = :logradouro, numero = :numero, complemento = :complemento, nome_Loja = :nome_Loja, descricao_Loja = :descricao_Loja, id_Imagem = :id_Imagem, tipo_Entrega = :tipo_Entrega, access_token = :access_token",
                 ExpressionAttributeValues={
                     ':cep': address_store.cep,
                     ':logradouro': address_store.logradouro,
@@ -119,7 +121,8 @@ def lambda_handler(event:any, context:any):
                     ':nome_Loja': address_store.nome_Loja,
                     ':descricao_Loja': address_store.descricao_Loja,
                     ':id_Imagem': address_store.id_Imagem,
-                    ':tipo_Entrega': address_store.tipo_Entrega
+                    ':tipo_Entrega': address_store.tipo_Entrega,
+                    ':access_token': address_store.access_token
                 }
             )
 
@@ -156,16 +159,17 @@ if __name__ == "__main__":
     os.environ['TABLE_NAME'] = 'Loja_Endereco'
     event = {
         "body": json.dumps({
-            "id_Endereco": 322509692138041184,
+            "id_Endereco": 185962218056648587,
             "cep": "08583620",
-            "logradouro": "Rua ataulizar rua customer",
-            "numero": "127",
-            "complemento": "Apto 1 update customer",
-            "Usuario_Tipo": "customer",
+            "logradouro": "Rua Júlio Diniz",
+            "numero": "43",
+            "complemento": "",
+            "Usuario_Tipo": "seller",
             "nome_Loja": "Loja Teste update",
             "descricao_Loja": "Descrição da loja teste update customer",
-            "id_Imagem": "https://us-east-2.console.aws.amazon.com/s3/object/loja-profile-pictures?region=us-east-2&bucketType=general&prefix=37dc297e-527b-4744-8f00-95a3bb4d25dd.jpg",
-            "tipo_Entrega": "Entrega rápida customer"
+            "id_Imagem": "df624bb4-acd0-474c-93b5-980074939995.jpg",
+            "tipo_Entrega": "Delivery",
+            "access_token": "1"
         })
     }
     print(lambda_handler(event, None))
