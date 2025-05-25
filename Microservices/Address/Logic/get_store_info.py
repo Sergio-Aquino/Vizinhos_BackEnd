@@ -4,6 +4,8 @@ import boto3
 import os
 from decimal import Decimal
 
+dynamodb = boto3.resource('dynamodb')
+
 @dataclass
 class Batch:
     id_Lote: str
@@ -54,6 +56,7 @@ class Store:
     tipo_Entrega: str
     imagem_url: str
     access_token: str
+    telefone: str = None
     produtos: list[Product] = None
 
     @staticmethod
@@ -95,6 +98,29 @@ def get_product_image(id_imagem: int) -> str:
     except Exception as ex:
         print(f"Erro ao buscar imagem com id: {id_imagem}: {str(ex)}")
         return None
+
+def get_vendor_phone(id_Endereco):
+    try:
+        table_user = dynamodb.Table(os.environ['USER_TABLE'])
+        
+        response = table_user.query(
+            IndexName='fk_id_Endereco-index',
+            KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(id_Endereco)
+        )
+        
+        if 'Items' not in response or len(response['Items']) == 0:
+            print(f"Vendedor não encontrado para o endereço: {id_Endereco}")
+            return None
+        
+        user = response['Items'][0]
+        if 'telefone' in user:
+            return user['telefone']
+        else:
+            print(f"Telefone não encontrado para o usuário com id_Endereco: {id_Endereco}")
+            return None
+    except Exception as ex:
+        print(f"Erro ao buscar telefone do vendedor: {str(ex)}")
+        return None
     
 
 def lambda_handler(event:any, context:any):
@@ -109,7 +135,6 @@ def lambda_handler(event:any, context:any):
                 'body': json.dumps({"message": "ID da loja não fornecido"})
             }
         
-        dynamodb = boto3.resource('dynamodb')
         address_table = dynamodb.Table(os.environ['ADDRESS_TABLE'])
 
         response = address_table.get_item(Key={'id_Endereco': id_loja})
@@ -124,6 +149,7 @@ def lambda_handler(event:any, context:any):
         imagem_url = get_store_image(item['id_Imagem'])
         item['imagem_url'] = imagem_url if imagem_url else None
         store = Store.from_dict(item)
+        store.telefone = get_vendor_phone(store.id_Endereco)
 
         product_table = dynamodb.Table(os.environ['PRODUCT_TABLE'])
         category_table = dynamodb.Table(os.environ['CATEGORY_TABLE'])
@@ -209,6 +235,7 @@ if __name__ == "__main__":
     os.environ['PRODUCT_CHARACTERISTICS_TABLE'] = 'Produto_Caracteristica'
     os.environ['CHARACTERISTIC_TABLE'] = 'Caracteristica'
     os.environ['BATCH_TABLE'] = 'Produto_Lote'
+    os.environ['USER_TABLE'] = 'Usuario'
     event = {
         'queryStringParameters': {
             'id_loja': '185962218056648587'
