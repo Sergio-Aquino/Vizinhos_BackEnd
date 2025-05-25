@@ -85,7 +85,7 @@ if __name__ == "__main__":
     event = {
         'body': json.dumps({
             "id_Loja": 185962218056648587,
-            "access_token": "APP_USR-1356231261866648-051013-96ea67cf7f09765fd6a88e99c93bdd9f-2430273423"
+            "access_token": ""
         })
     }
 
