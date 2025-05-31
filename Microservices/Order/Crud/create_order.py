@@ -176,6 +176,20 @@ def lambda_handler(event:any, context:any):
                 'statusCode': 400,
                 'body': json.dumps({'message': 'Valor total do pedido não corresponde ao valor informado'})
             }
+
+        for item in order.item_pedido:
+            response_lote_item = table_lote.get_item(
+                Key={'id_Lote': item.fk_id_Lote}
+            )['Item']
+
+            if response_lote_item['quantidade'] < item.quantidade_item:
+                print(f"Quantidade disponível do lote {item.fk_id_Lote} insuficiente")
+                return {
+                    'statusCode': 400,
+                    'body': json.dumps({'message': f'Quantidade disponível do lote {item.fk_id_Lote} insuficiente'})
+                }
+            response_lote_item['quantidade'] -= item.quantidade_item
+            table_lote.put_item(Item=response_lote_item)
             
         
         response_payment = json.loads(generate_pix_payment(order, email))
