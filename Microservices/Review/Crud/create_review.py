@@ -4,6 +4,9 @@ import os
 import json
 import uuid
 from botocore.exceptions import ClientError
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 
 @dataclass
 class Review:
@@ -12,15 +15,11 @@ class Review:
     avaliacao: int
     comentario: str
     id_Pedido: str
-    id_Avaliacao: int = int(str(uuid.uuid4().int)[:18])
+    id_Avaliacao: int = field(default_factory=lambda: int(str(uuid.uuid4().int)[:18]))
+    data_hora_criacao: str = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d %H:%M:%S")
 
     @staticmethod
     def from_json(json_data: dict):
-        required_fields = ['fk_Usuario_cpf', 'fk_id_Endereco', 'avaliacao', 'comentario', 'id_Pedido']
-        missing_fields = [field for field in required_fields if field not in json_data]
-        if missing_fields:
-            raise KeyError(f"Campos obrigatórios não informados no corpo da requisição: {', '.join(missing_fields)}")
-
         if not isinstance(json_data['fk_Usuario_cpf'], str):
             raise TypeError('Campo fk_Usuario_cpf deve ser uma string')
         if not isinstance(json_data['fk_id_Endereco'], int):
@@ -61,13 +60,13 @@ def lambda_handler(event:any, content:any):
     try:
         print("Recebendo requisição...")
         if 'body' not in event or event['body'] is None:
-             raise ValueError("Corpo da requisição ausente.")
+            raise ValueError("Corpo da requisição ausente.")
         
         body = json.loads(event['body'])
         print("Corpo da requisição parseado.")
         
         review = Review.from_json(body)
-        print(f"Objeto Review criado para id_Pedido: {review.id_Pedido}")
+        print(f"Objeto Review criado para id_Pedido: {review.id_Pedido} em {review.data_hora_criacao} (Fuso Horário de São Paulo)")
 
         dynamodb = boto3.resource('dynamodb')
         table_user = dynamodb.Table(user_table_name)
@@ -93,7 +92,7 @@ def lambda_handler(event:any, content:any):
 
         print(f"Verificando tipo de usuário para o endereço: {review.fk_id_Endereco}")
         response_seller_check = table_user.query(
-            IndexName='fk_id_Endereco-index',
+            IndexName='fk_id_Endereco-index', 
             KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(review.fk_id_Endereco)
         )
         if 'Items' not in response_seller_check or not response_seller_check['Items']:
@@ -119,7 +118,8 @@ def lambda_handler(event:any, content:any):
             'fk_id_Endereco': review.fk_id_Endereco,
             'avaliacao': review.avaliacao,
             'comentario': review.comentario,
-            'id_Pedido': review.id_Pedido
+            'id_Pedido': review.id_Pedido,
+            'data_hora_criacao': review.data_hora_criacao 
         }
         table_review.put_item(Item=review_item)
         print(f"Avaliação {review.id_Avaliacao} criada com sucesso na tabela {review_table_name}.")
@@ -162,16 +162,15 @@ def lambda_handler(event:any, content:any):
         error_code = e.response['Error']['Code']
         error_message = e.response['Error']['Message']
         print(f"Erro do DynamoDB: {error_code} - {error_message}")
-        status_code = 500
+        status_code = 500 
         if error_code in ['ResourceNotFoundException']:
-             status_code = 404
+            status_code = 404 
         elif error_code in ['ProvisionedThroughputExceededException', 'ThrottlingException']:
-             status_code = 503
+            status_code = 503 
         return {'statusCode': status_code, 'body': json.dumps({'message': f"Erro no serviço de banco de dados: {error_message}"})}
     except Exception as e:
         print(f"Erro inesperado: {type(e).__name__} - {e}")
         return {'statusCode': 500, 'body': json.dumps({'message': f"Erro interno inesperado no servidor."})}
-
 
 
 if __name__ == "__main__":
