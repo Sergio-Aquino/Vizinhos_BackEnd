@@ -5,11 +5,8 @@ import requests
 import re
 from math import radians, sin, cos, sqrt, atan2
 
-USER_CACHE = {}
-ADDRESS_CACHE = {}
 IMAGE_CACHE = {}
 CEP_CACHE = {}
-STORE_CACHE = {}
 
 dynamodb = boto3.resource('dynamodb')
 s3_client = boto3.client('s3')
@@ -61,9 +58,6 @@ def get_cep_coordinates(cep):
         return None
 
 def get_user_by_email(email):
-    if email in USER_CACHE:
-        return USER_CACHE[email]
-    
     user_table = get_table('TABLE_USER')
     response = user_table.query(
         IndexName='email-index',
@@ -71,20 +65,15 @@ def get_user_by_email(email):
     )
     
     if 'Items' in response and len(response['Items']) > 0:
-        USER_CACHE[email] = response['Items'][0]
         return response['Items'][0]
     
     return None
 
-def get_address(address_id):
-    if address_id in ADDRESS_CACHE:
-        return ADDRESS_CACHE[address_id]
-    
+def get_address(address_id):    
     address_table = get_table('ADRESS_STORE_TABLE')
     response = address_table.get_item(Key={'id_Endereco': address_id})
     
     if 'Item' in response:
-        ADDRESS_CACHE[address_id] = response['Item']
         return response['Item']
     
     return None
@@ -107,38 +96,46 @@ def get_store_image(id_imagem):
         return None
 
 def get_all_stores(limit=100):
-    if 'all_stores' in STORE_CACHE:
-        return STORE_CACHE['all_stores']
-    
     address_table = get_table('ADRESS_STORE_TABLE')
     user_table = get_table('TABLE_USER')
     
-    scan_params = {
-        'Limit': limit
-    }
-    
-    addresses = address_table.scan(**scan_params)
-    if 'Items' not in addresses:
-        return []
+    scan_params = {}
     
     stores = []
-    for address in addresses['Items']:
-        address_id = address["id_Endereco"]
-
-        response_user = user_table.query(
-            IndexName='fk_id_Endereco-index',
-            KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(address_id)
-        )
-
-        if 'Items' not in response_user or len(response_user['Items']) == 0:
-            continue
-
-        if response_user['Items'][0]['Usuario_Tipo'] not in ['seller', 'customer_seller']:
-           continue
+    done = False
+    start_key = None
+    while not done:
+        if start_key:
+            scan_params['ExclusiveStartKey'] = start_key
         
-        stores.append(address)
-    
-    STORE_CACHE['all_stores'] = stores
+        addresses = address_table.scan(**scan_params)
+        
+        if 'Items' not in addresses:
+            print("Nenhum endereço encontrado.")
+            break
+
+        for address in addresses['Items']:
+            address_id = address.get("id_Endereco")
+            if not address_id:
+                continue
+
+            response_user = user_table.query(
+                IndexName='fk_id_Endereco-index',
+                KeyConditionExpression=boto3.dynamodb.conditions.Key('fk_id_Endereco').eq(address_id)
+            )
+
+            if 'Items' in response_user and len(response_user['Items']) > 0:
+                user_info = response_user['Items'][0]
+                if user_info.get('Usuario_Tipo') in ['seller', 'customer_seller']:
+                    stores.append(address)
+        
+        start_key = addresses.get('LastEvaluatedKey', None)
+        done = start_key is None
+
+        if len(stores) >= limit: 
+             print(f"Atingido limite de {limit} lojas encontradas. Interrompendo scan.")
+             break 
+        
     return stores
 
 def get_stores_within_500_meters(origin_cep, stores):
@@ -151,7 +148,7 @@ def get_stores_within_500_meters(origin_cep, stores):
 
     stores_within_500_meters = []
     for store in stores:
-        store_cep = store["cep"]
+        store_cep = store.get("cep")
         if not store_cep:
             continue
 
@@ -174,7 +171,10 @@ def lambda_handler(event: any, context: any):
         query_params = event.get('queryStringParameters', {}) or {}
         email = query_params.get('email')
         
-        limit = int(query_params.get('limit', '100'))
+        try:
+            limit = min(int(query_params.get('limit', '100')), 1000)
+        except ValueError:
+            limit = 100
         
         if not email:
             raise ValueError("email não fornecido")
@@ -193,7 +193,21 @@ def lambda_handler(event: any, context: any):
                 'body': json.dumps({'message': "Usuário não encontrado"}, default=str)
             }
         
-        address_id = int(user['fk_id_Endereco'])
+        address_id_str = user.get('fk_id_Endereco')
+        if not address_id_str:
+             print(f"Usuário {email} não possui fk_id_Endereco.")
+             return {
+                'statusCode': 400,
+                'body': json.dumps({'message': "Endereço não associado ao usuário"}, default=str)
+            }
+        try:
+            address_id = int(address_id_str)
+        except (ValueError, TypeError):
+            print(f"fk_id_Endereco inválido para usuário {email}: {address_id_str}")
+            return {
+                'statusCode': 500, 
+                'body': json.dumps({'message': "ID de endereço inválido no registro do usuário"}, default=str)
+            }
 
         address = get_address(address_id)
         if not address:
@@ -203,19 +217,28 @@ def lambda_handler(event: any, context: any):
                 'body': json.dumps({'message': "Endereço do usuário não encontrado"}, default=str)
             }
 
-        cep = address['cep']
+        cep = address.get('cep')
+        if not cep:
+            print(f"Endereço {address_id} não possui CEP.")
+            return {
+                'statusCode': 400,
+                'body': json.dumps({'message': "CEP não encontrado para o endereço do usuário"}, default=str)
+            }
 
-        stores = get_all_stores(limit)
+        all_stores = get_all_stores(limit)
         
-        stores_within_500_range = get_stores_within_500_meters(cep, stores)
+        stores_within_500_range = get_stores_within_500_meters(cep, all_stores)
 
+        result_stores = []
         for store in stores_within_500_range:
-            store_image = store.get('id_Imagem')
-            store['imagem'] = get_store_image(store_image) if store_image else None
+            store_data = store.copy()
+            store_image_id = store_data.get('id_Imagem')
+            store_data['imagem'] = get_store_image(store_image_id) if store_image_id else None
+            result_stores.append(store_data)
 
         return {
             "statusCode": 200,
-            "body": json.dumps({"lojas": stores_within_500_range}, default=str),
+            "body": json.dumps({"lojas": result_stores}, default=str),
         }
 
     except KeyError as err:
@@ -245,13 +268,13 @@ def lambda_handler(event: any, context: any):
 
 
 if __name__ == "__main__":
-   os.environ['TABLE_USER'] = 'Usuario'
-   os.environ['ADRESS_STORE_TABLE'] = 'Loja_Endereco'
-   os.environ['BUCKET_NAME'] = 'loja-profile-pictures'
+   os.environ['TABLE_USER'] = ''
+   os.environ['ADRESS_STORE_TABLE'] = ''
+   os.environ['BUCKET_NAME'] = ''
 
    event = {
         'queryStringParameters': {
-            'email': "sergioadm120@gmail.com"
+            'email': ""
         }
    }
    print(lambda_handler(event, None))

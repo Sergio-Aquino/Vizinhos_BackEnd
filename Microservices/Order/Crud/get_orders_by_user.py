@@ -390,17 +390,17 @@ def lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-    os.environ['USER_TABLE'] = 'Usuario'
-    os.environ['ORDERS_TABLE'] = 'Pedido'
-    os.environ['TABLE_ITEM_ORDER'] = 'Itens_Pedido'
-    os.environ['TABLE_LOTE'] = 'Produto_Lote'
-    os.environ['TABLE_PRODUCT'] = 'Produto'
-    os.environ['BUCKET_NAME_PRODUCT'] = 'product-image-vizinhos'
-    os.environ['BUCKET_NAME_STORE'] = 'loja-profile-pictures'
-    os.environ['TABLE_STORE'] = 'Loja_Endereco'
+    os.environ['USER_TABLE'] = ''
+    os.environ['ORDERS_TABLE'] = ''
+    os.environ['TABLE_ITEM_ORDER'] = ''
+    os.environ['TABLE_LOTE'] = ''
+    os.environ['TABLE_PRODUCT'] = ''
+    os.environ['BUCKET_NAME_PRODUCT'] = ''
+    os.environ['BUCKET_NAME_STORE'] = ''
+    os.environ['TABLE_STORE'] = ''
     event = {
         'queryStringParameters': {
-            'cpf': "48812172830"
+            'cpf': ""
         }
     }
     print(lambda_handler(event, None))

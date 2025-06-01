@@ -43,11 +43,11 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['LOTES_TABLE'] = 'Produto_Lote'
-    os.environ['ORDERS_TABLE'] = 'Pedido'
+    os.environ['LOTES_TABLE'] = ''
+    os.environ['ORDERS_TABLE'] = ''
     event = {
         'queryStringParameters': {
-            'id_Lote': "5c07dfdd-c929-455c-8a16-6091a3d4868f"
+            'id_Lote': ""
         }
     }
     print(lambda_handler(event, None))

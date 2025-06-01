@@ -227,18 +227,18 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['BUCKET_NAME_STORE'] = 'loja-profile-pictures'
-    os.environ['BUCKET_NAME_PRODUCT'] = 'product-image-vizinhos'
-    os.environ['ADDRESS_TABLE'] = 'Loja_Endereco'
-    os.environ['PRODUCT_TABLE'] = 'Produto'
-    os.environ['CATEGORY_TABLE'] = 'Categoria'
-    os.environ['PRODUCT_CHARACTERISTICS_TABLE'] = 'Produto_Caracteristica'
-    os.environ['CHARACTERISTIC_TABLE'] = 'Caracteristica'
-    os.environ['BATCH_TABLE'] = 'Produto_Lote'
-    os.environ['USER_TABLE'] = 'Usuario'
+    os.environ['BUCKET_NAME_STORE'] = ''
+    os.environ['BUCKET_NAME_PRODUCT'] = ''
+    os.environ['ADDRESS_TABLE'] = ''
+    os.environ['PRODUCT_TABLE'] = ''
+    os.environ['CATEGORY_TABLE'] = ''
+    os.environ['PRODUCT_CHARACTERISTICS_TABLE'] = ''
+    os.environ['CHARACTERISTIC_TABLE'] = ''
+    os.environ['BATCH_TABLE'] = ''
+    os.environ['USER_TABLE'] = ''
     event = {
         'queryStringParameters': {
-            'id_loja': '185962218056648587'
+            'id_loja': ''
         }
     }
     response = lambda_handler(event, None)

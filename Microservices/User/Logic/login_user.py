@@ -47,11 +47,11 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['COGNITO_CLIENT_ID'] = '12rp435mgucks8jfndh1dufr0e'
+    os.environ['COGNITO_CLIENT_ID'] = ''
     event = {
         "body": json.dumps({
-            "email":"aquino.lima@aluno.ifsp.edu.br",
-            "senha":"MinhaSenha123#"
+            "email":"",
+            "senha":""
         })
     }
     print(lambda_handler(event, None))

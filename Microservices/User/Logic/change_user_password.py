@@ -60,9 +60,9 @@ if __name__ == "__main__":
 
     event = {
         "body": json.dumps({
-            "email": "aquino.lima@aluno.ifsp.edu.br",
-            "confirmation_code": "581665",
-            "new_password": "Senha123#"
+            "email": "",
+            "confirmation_code": "",
+            "new_password": ""
         })
     }
 

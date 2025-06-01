@@ -44,10 +44,10 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['TABLE_ORDER'] = 'Pedido'
+    os.environ['TABLE_ORDER'] = ''
     event = {
         "queryStringParameters": {
-            "id_Pedido": "8376f2bb-813e-430e-b591-1fcaf6fee62a"
+            "id_Pedido": ""
         }
     }
     print(lambda_handler(event, None))

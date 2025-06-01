@@ -126,17 +126,17 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['REVIEW_TABLE'] = 'Avaliacao'
-    os.environ['USER_TABLE'] = 'Usuario'
-    os.environ['ADDRESS_TABLE'] = 'Loja_Endereco'
+    os.environ['REVIEW_TABLE'] = ''
+    os.environ['USER_TABLE'] = ''
+    os.environ['ADDRESS_TABLE'] = ''
     
     event = {
         'body': json.dumps({
-            'fk_Usuario_cpf': '52750852811',
-            'fk_id_Endereco': 857057699749152416,
+            'fk_Usuario_cpf': '',
+            'fk_id_Endereco': "",
             'avaliacao': 5,
             'comentario': 'Ótimo serviço updated!',
-            'id_Avaliacao': 223840994986634202
+            'id_Avaliacao': ""
         })
     }
     print(lambda_handler(event, None))

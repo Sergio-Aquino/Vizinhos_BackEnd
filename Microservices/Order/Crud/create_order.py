@@ -253,30 +253,30 @@ def lambda_handler(event:any, context:any):
 
 
 if __name__ == "__main__":
-    os.environ['TABLE_USER'] = 'Usuario'
-    os.environ['TABLE_LOTE'] = 'Produto_Lote'
-    os.environ['TABLE_ORDER'] = 'Pedido'
-    os.environ['TABLE_ITEM_ORDER'] = 'Itens_Pedido'
-    os.environ['TABLE_PRODUCT'] = 'Produto'
-    os.environ['STORE_ADDRESS_TABLE'] = 'Loja_Endereco'
+    os.environ['TABLE_USER'] = ''
+    os.environ['TABLE_LOTE'] = ''
+    os.environ['TABLE_ORDER'] = ''
+    os.environ['TABLE_ITEM_ORDER'] = ''
+    os.environ['TABLE_PRODUCT'] = ''
+    os.environ['STORE_ADDRESS_TABLE'] = ''
     event = {
         "body": json.dumps({
-            "fk_Usuario_cpf": "48812172830",
+            "fk_Usuario_cpf": "",
             "valor": 180.0,
             "tipo_entrega": "Entrega Rápida",
             "item_pedido": [
                 {
-                    "fk_id_Lote": "2d8d657c-3381-44f2-b7d9-cc71ad35e0e7",
+                    "fk_id_Lote": "",
                     "quantidade_item": 2,
                     "preco_unitario": 40.0
                 },
                 {
-                    "fk_id_Lote": "816470bc-2e54-4ec6-ba7c-0497dc461af4",
+                    "fk_id_Lote": "",
                     "quantidade_item": 2,
                     "preco_unitario": 50.0
                 }
             ],
-            "id_Loja": 185962218056648587
+            "id_Loja": ""
             
         })
     }
