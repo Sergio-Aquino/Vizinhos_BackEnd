@@ -84,11 +84,11 @@ def lambda_handler(event:any, context:any):
             vendor['Data_Atualizacao_Plano_Vendedor'] = datetime.datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d %H:%M:%S")
 
             if vendor_plan == 'one_month':
-                payment = generate_pix_payment(email, 1)
+                payment = generate_pix_payment(email, float(os.environ.get('VENDOR_PLAN_ONE_MONTH_PRICE', 1)))
             elif vendor_plan == 'three_month':
-                payment = generate_pix_payment(email, 2.5)
+                payment = generate_pix_payment(email, float(os.environ.get('VENDOR_PLAN_THREE_MONTH_PRICE', 2)))
             elif vendor_plan == 'six_month':
-                payment = generate_pix_payment(email, 3)
+                payment = generate_pix_payment(email, float(os.environ.get('VENDOR_PLAN_SIX_MONTH_PRICE', 3)))
             
             if payment.get("statusCode") != 201:
                 return payment
