@@ -25,7 +25,7 @@ def generate_card_token(card_number, card_expiration_month, card_expiration_year
         return None
 
 def lambda_handler(event:any, context:any):
-    sdk = mercadopago.SDK("TEST-1356231261866648-051013-0d2ef2167a37e823d733d05ec30379f0-2430273423")
+    sdk = mercadopago.SDK("")
 
     token = generate_card_token("5031433215406351", 11, 2030, "123")
 
@@ -36,12 +36,12 @@ def lambda_handler(event:any, context:any):
         "installments": 1,
         "payment_method_id": "master",
         "payer": {
-            "email": "aquino.lima@aluno.ifsp.edu.br",
+            "email": "",
             "identification": {
                 "type": "CPF",
-                "number": "12345678909"
+                "number": ""
             },
-            "first_name": "TESTUSER598344673",
+            "first_name": "",
         }
     }
 

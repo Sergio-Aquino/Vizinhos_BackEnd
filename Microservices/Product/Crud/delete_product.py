@@ -49,12 +49,12 @@ def lambda_handler(event:any, context:any):
         }    
 
 if __name__ == "__main__":
-    os.environ['PRODUCT_TABLE'] = 'Produto'
-    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = 'Produto_Caracteristica'
-    os.environ['BUCKET_NAME'] = 'product-image-vizinhos'
+    os.environ['PRODUCT_TABLE'] = ''
+    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = ''
+    os.environ['BUCKET_NAME'] = ''
     event = {
         'queryStringParameters': {
-            'id_Produto': "b2af6336-8caf-4251-bb11-157208e2f5e8"
+            'id_Produto': ""
         }
     }
     print(lambda_handler(event, None))

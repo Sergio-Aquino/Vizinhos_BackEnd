@@ -43,10 +43,10 @@ def lambda_handler(event:any, context:any):
 
 
 if __name__ == "__main__":
-    os.environ["TABLE_NAME"] = "Caracteristica"
+    os.environ["TABLE_NAME"] = ""
     event = {
         "queryStringParameters": {
-            "id_Caracteristica": 20
+            "id_Caracteristica": ""
         }
     }
     print(lambda_handler(event, None))

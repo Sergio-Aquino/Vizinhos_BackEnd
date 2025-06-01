@@ -254,15 +254,15 @@ def lambda_handler(event: any, context: any):
     
 
 if __name__ == "__main__":
-    os.environ['TABLE_ORDER'] = 'Pedido'
-    os.environ['TABLE_ITEM_ORDER'] = 'Itens_Pedido'
-    os.environ['TABLE_LOTE'] = 'Produto_Lote'
-    os.environ['TABLE_PRODUCT'] = 'Produto'
-    os.environ['BUCKET_NAME'] = 'product-image-vizinhos'
+    os.environ['TABLE_ORDER'] = ''
+    os.environ['TABLE_ITEM_ORDER'] = ''
+    os.environ['TABLE_LOTE'] = ''
+    os.environ['TABLE_PRODUCT'] = ''
+    os.environ['BUCKET_NAME'] = ''
 
     event = {
         "queryStringParameters": {
-            "id_Loja": 185962218056648587
+            "id_Loja": ""
         }
     }
     context = {}

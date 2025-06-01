@@ -169,17 +169,17 @@ def lambda_handler(event: any, context:any):
         }
     
 if __name__ == "__main__":
-    os.environ['PRODUCT_TABLE'] = 'Produto'
-    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = 'Produto_Caracteristica'
-    os.environ['CHARACTERISTIC_TABLE'] = 'Caracteristica'
-    os.environ['CATEGORY_TABLE'] = 'Categoria'
-    os.environ['USER_TABLE'] = 'Usuario'
-    os.environ['BUCKET_NAME'] = 'product-image-vizinhos'
-    os.environ['LOT_TABLE'] = 'Produto_Lote'
+    os.environ['PRODUCT_TABLE'] = ''
+    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = ''
+    os.environ['CHARACTERISTIC_TABLE'] = ''
+    os.environ['CATEGORY_TABLE'] = ''
+    os.environ['USER_TABLE'] = ''
+    os.environ['BUCKET_NAME'] = ''
+    os.environ['LOT_TABLE'] = ''
 
     event = {
         'queryStringParameters': {
-            'fk_id_Endereco': 185962218056648587
+            'fk_id_Endereco': ""
         }
     }
 

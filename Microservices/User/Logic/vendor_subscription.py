@@ -136,10 +136,10 @@ def lambda_handler(event:any, context:any):
     
 if __name__ == "__main__":
     os.environ['USER_TABLE'] = 'Usuario'
-    os.environ['VIZINHOS_ACCESS_TOKEN'] = "APP_USR-1356231261866648-051013-96ea67cf7f09765fd6a88e99c93bdd9f-2430273423"
+    os.environ['VIZINHOS_ACCESS_TOKEN'] = ""
     event = {
         'body': json.dumps({
-            'email': 'sergioadm120@gmail.com',
+            'email': '',
             'vendor_plan': 'one_month'
         })
     }

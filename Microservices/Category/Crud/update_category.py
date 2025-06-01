@@ -48,10 +48,10 @@ def lambda_handler(event: any, context: any):
     }
 
 if __name__ == "__main__":
-    os.environ['TABLE_NAME'] = 'Categoria'
+    os.environ['TABLE_NAME'] = ''
     event = {
         "body": json.dumps({
-            "id_Categoria": 1,
+            "id_Categoria": "",
             "descricao": "Categoria Teste 2"
         })
     }

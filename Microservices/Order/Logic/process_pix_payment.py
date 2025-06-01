@@ -72,7 +72,7 @@ def lambda_handler(event:any, context:any):
 if __name__ == "__main__":
     event = {
         "body": json.dumps({
-            "email": "sergioadm120@gmail.com",
+            "email": "",
             "preco": 0.02,
             "products": [
                 {

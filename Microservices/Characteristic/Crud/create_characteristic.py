@@ -38,7 +38,7 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['TABLE_NAME'] = 'Caracteristica'
+    os.environ['TABLE_NAME'] = ''
     event = {
         "body": json.dumps({
             "descricao": "Caracteristica Teste"

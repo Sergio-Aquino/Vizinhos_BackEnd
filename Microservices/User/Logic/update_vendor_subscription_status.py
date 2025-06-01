@@ -138,9 +138,9 @@ def lambda_handler(event:any, context:any):
 
 if __name__ == "__main__":
     sample_event = {
-        'body': json.dumps({"email": "sergioadm120@gmail.com"})
+        'body': json.dumps({"email": ""})
     }
-    os.environ['USER_TABLE'] = 'Usuario'
-    os.environ['ACCESS_TOKEN'] = "APP_USR-1356231261866648-051013-96ea67cf7f09765fd6a88e99c93bdd9f-2430273423"
+    os.environ['USER_TABLE'] = ''
+    os.environ['ACCESS_TOKEN'] = ""
 
     print(lambda_handler(sample_event, None))

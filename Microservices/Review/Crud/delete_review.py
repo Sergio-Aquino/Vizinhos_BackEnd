@@ -43,11 +43,11 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['REVIEW_TABLE'] = 'Avaliacao'
+    os.environ['REVIEW_TABLE'] = ''
 
     event = {
         'queryStringParameters': {
-            'id_Avaliacao': 353050090914264012
+            'id_Avaliacao': ""
         }
     }
     print(lambda_handler(event, None))

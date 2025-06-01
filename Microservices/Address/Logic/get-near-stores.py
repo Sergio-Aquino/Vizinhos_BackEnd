@@ -268,13 +268,13 @@ def lambda_handler(event: any, context: any):
 
 
 if __name__ == "__main__":
-   os.environ['TABLE_USER'] = 'Usuario'
-   os.environ['ADRESS_STORE_TABLE'] = 'Loja_Endereco'
-   os.environ['BUCKET_NAME'] = 'loja-profile-pictures'
+   os.environ['TABLE_USER'] = ''
+   os.environ['ADRESS_STORE_TABLE'] = ''
+   os.environ['BUCKET_NAME'] = ''
 
    event = {
         'queryStringParameters': {
-            'email': "sergioadm120@gmail.com"
+            'email': ""
         }
    }
    print(lambda_handler(event, None))

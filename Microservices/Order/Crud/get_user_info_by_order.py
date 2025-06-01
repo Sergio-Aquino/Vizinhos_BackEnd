@@ -82,13 +82,13 @@ def lambda_handler(event:any, context:any):
 
 
 if __name__ == "__main__":
-    os.environ['TABLE_ORDER'] = 'Pedido'
-    os.environ['TABLE_USER'] = 'Usuario'
-    os.environ['TABLE_ADDRESS'] = 'Loja_Endereco'
+    os.environ['TABLE_ORDER'] = ''
+    os.environ['TABLE_USER'] = ''
+    os.environ['TABLE_ADDRESS'] = ''
 
     event = {
         "queryStringParameters": {
-            "id_Pedido": "e5f41839-1163-4c49-80b4-5b8dd91c6e86"
+            "id_Pedido": ""
         }
     }
     context = {}

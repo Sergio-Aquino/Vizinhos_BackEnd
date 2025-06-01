@@ -97,11 +97,11 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['TABLE_ORDER'] = 'Pedido'
-    os.environ['TABLE_STORE'] = 'Loja_Endereco'
+    os.environ['TABLE_ORDER'] = ''
+    os.environ['TABLE_STORE'] = ''
     event = {
         "body": json.dumps({
-            "id_Pedido":"e2e45550-909f-4e8b-8fcb-b0933d263e0d"
+            "id_Pedido":""
         })
     }
     context = {}
