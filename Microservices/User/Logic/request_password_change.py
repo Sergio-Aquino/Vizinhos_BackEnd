@@ -31,10 +31,10 @@ def lambda_handler(event:any, context:any):
         }
 
 if __name__ == "__main__":
-    os.environ['USER_POOL_ID'] = 'us-east-2_K0dp1BUPW'
+    os.environ['USER_POOL_ID'] = ''
     event = {
         "body": json.dumps({
-            "email": "aquino.lima@aluno.ifsp.edu.br"
+            "email": ""
         })
     }
     print(lambda_handler(event, None))

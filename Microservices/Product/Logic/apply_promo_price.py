@@ -60,10 +60,10 @@ def lambda_handler(event:any, context:any):
         }
     
 if __name__ == "__main__":
-    os.environ['PRODUCT_TABLE'] = 'Produto'
+    os.environ['PRODUCT_TABLE'] = ''
     event = {
         "body": json.dumps({
-            "id_produto": "e9488bc7-a561-4447-8554-8b48165dd626",
+            "id_produto": "",
             "valor_promocao": 10.99
         })
     }

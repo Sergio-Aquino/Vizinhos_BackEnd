@@ -163,26 +163,26 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['ADDRESS_TABLE'] = 'Loja_Endereco'
-    os.environ['CATEGORY_TABLE'] = 'Categoria'
-    os.environ['PRODUCT_TABLE'] = 'Produto'
-    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = 'Produto_Caracteristica'
-    os.environ['CHARACTERISTIC_TABLE'] = 'Caracteristica'
-    os.environ['USER_TABLE'] = 'Usuario'
+    os.environ['ADDRESS_TABLE'] = ''
+    os.environ['CATEGORY_TABLE'] = ''
+    os.environ['PRODUCT_TABLE'] = ''
+    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = ''
+    os.environ['CHARACTERISTIC_TABLE'] = ''
+    os.environ['USER_TABLE'] = ''
 
     event = {
         "body": json.dumps({
             "nome": 'Produto Teste',
-            "fk_id_Endereco": 857057699749152416,
-            "fk_id_Categoria": 230242207820669758,
+            "fk_id_Endereco": "",
+            "fk_id_Categoria": "",
             "dias_vcto": 30,
             "valor_venda": 10.0,
             "valor_custo": 5.0,
             "tamanho": 'M',
             "descricao": 'Produto de teste',
-            "id_imagem": "0ca0c299-c2b7-4d2a-ac34-02c6ce82bb2a.jpg",
+            "id_imagem": "",
             "disponivel": True,
-            "caracteristicas_IDs": ["a4b6bf35-78ea-4cca-9429-6900decc0112"]
+            "caracteristicas_IDs": [""]
         })
     }
 

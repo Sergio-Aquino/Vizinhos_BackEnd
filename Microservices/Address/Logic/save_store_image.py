@@ -43,7 +43,7 @@ if __name__ == "__main__":
     event = {
         "body": json.dumps({
             "image": "",
-            "file_extension": "jpg"
+            "file_extension": ""
         })
     }
     print(lambda_handler(event, None))

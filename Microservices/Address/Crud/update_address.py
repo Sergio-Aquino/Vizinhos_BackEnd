@@ -156,10 +156,10 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['TABLE_NAME'] = 'Loja_Endereco'
+    os.environ['TABLE_NAME'] = ''
     event = {
         "body": json.dumps({
-            "id_Endereco": 185962218056648587,
+            "id_Endereco": "",
             "cep": "08583620",
             "logradouro": "Rua Júlio Diniz",
             "numero": "43",
@@ -167,9 +167,9 @@ if __name__ == "__main__":
             "Usuario_Tipo": "seller",
             "nome_Loja": "Loja Teste update",
             "descricao_Loja": "Descrição da loja teste update customer",
-            "id_Imagem": "df624bb4-acd0-474c-93b5-980074939995.jpg",
+            "id_Imagem": "",
             "tipo_Entrega": "Delivery",
-            "access_token": "1"
+            "access_token": ""
         })
     }
     print(lambda_handler(event, None))

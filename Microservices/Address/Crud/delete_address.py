@@ -52,7 +52,7 @@ if __name__ == "__main__":
     os.environ['TABLE_NAME'] = 'Loja_Endereco'
     event = {
         "queryStringParameters": {
-            "id_Endereco": 489864014224531116
+            "id_Endereco": ""
         }
     }
     print(lambda_handler(event, None))

@@ -147,7 +147,7 @@ def lambda_handler(event:any, context:any):
         }
 
 if __name__ == "__main__":
-    os.environ['TABLE_NAME'] = 'Loja_Endereco'
+    os.environ['TABLE_NAME'] = ''
     event = {
         "body": json.dumps({
             "cep": "08583620",
@@ -157,7 +157,7 @@ if __name__ == "__main__":
             "Usuario_Tipo": "customer",
             "nome_Loja": "loja do sergio",
             "descricao_Loja": "descricao da loja do sergio",
-            "id_Imagem": "https://us-east-2.console.aws.amazon.com/s3/object/loja-profile-pictures?region=us-east-2&bucketType=general&prefix=37dc297e-527b-4744-8f00-95a3bb4d25dd.jpg",
+            "id_Imagem": "",
             "tipo_Entrega": "entrega feita por mim"
         })
     }

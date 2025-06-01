@@ -129,12 +129,12 @@ if __name__ == "__main__":
     event = {
         "body": json.dumps({
             "nome": "Sergio",
-            "cpf": "12345678901",
-            "email": "sergioadm120@gmail.com",
+            "cpf": "",
+            "email": "",
             "Usuario_Tipo": "customer",
-            "fk_id_Endereco": 743647647193518997,
+            "fk_id_Endereco": "",
             "telefone": "1234567890",
-            "senha": "MinhaSenha123#"
+            "senha": ""
         })
     }
     print(lambda_handler(event, None))

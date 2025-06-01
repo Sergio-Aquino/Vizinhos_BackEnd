@@ -36,10 +36,10 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['BUCKET_NAME'] = 'product-image-vizinhos'
+    os.environ['BUCKET_NAME'] = ''
     event = {
         'queryStringParameters': {
-            "id_imagem": "d30b6a98-d2f5-4f6b-a238-f9dcbeeeccc3.jpg"
+            "id_imagem": ""
         }
     }  
     print(lambda_handler(event, None))

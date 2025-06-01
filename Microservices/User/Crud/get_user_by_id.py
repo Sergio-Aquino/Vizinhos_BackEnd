@@ -42,10 +42,10 @@ def lambda_handler(event:any, context:any):
         }
     
 if __name__ == "__main__":
-    os.environ['TABLE_NAME'] = 'Usuario'
+    os.environ['TABLE_NAME'] = ''
     event = {
         'queryStringParameters': {
-            'cpf': "1"
+            'cpf': ""
         }
     }
     print(lambda_handler(event, None))

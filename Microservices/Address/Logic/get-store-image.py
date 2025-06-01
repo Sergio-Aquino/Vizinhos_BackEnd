@@ -38,10 +38,10 @@ def lambda_handler(event:any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['BUCKET_NAME'] = 'loja-profile-pictures'
+    os.environ['BUCKET_NAME'] = ''
     event = {
         'queryStringParameters': {
-            "id_imagem": "eb6a88bd-4963-478f-a6a6-87a6e8db8e4f.jpg"
+            "id_imagem": ""
         }
     }  
     print(lambda_handler(event, None))

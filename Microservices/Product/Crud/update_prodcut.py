@@ -212,16 +212,16 @@ def lambda_handler(event: any, context:any):
     
 
 if __name__ == "__main__":
-    os.environ['PRODUCT_TABLE'] = 'Produto'
-    os.environ['CATEGORY_TABLE'] = 'Categoria'
-    os.environ['CHARACTERISTIC_TABLE'] = 'Caracteristica'
-    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = 'Produto_Caracteristica'
-    os.environ['BUCKET_NAME'] = 'product-image-vizinhos'
+    os.environ['PRODUCT_TABLE'] = ''
+    os.environ['CATEGORY_TABLE'] = ''
+    os.environ['CHARACTERISTIC_TABLE'] = ''
+    os.environ['PRODUCT_CHARACTERISTIC_TABLE'] = ''
+    os.environ['BUCKET_NAME'] = ''
     event = {
         "body": json.dumps({
-            "id_Produto": '9d55e8f6-68a8-4665-bac7-cc2e1b52322a',
+            "id_Produto": '',
             "nome": 'Produto Teste para atualizar',
-            "fk_id_Categoria": 676581255295820208,
+            "fk_id_Categoria": "",
             "dias_vcto": 70,
             "valor_venda": 70,
             "valor_custo": 70,
@@ -229,7 +229,7 @@ if __name__ == "__main__":
             "descricao": 'descricao',
             "id_imagem": "1",
             "disponivel": False,
-            "caracteristicas_IDs": ["90c5f19b-a4d4-4991-b863-35da4dcd36ae", "b332ab38-45dc-4535-953a-bae803e642ec"]
+            "caracteristicas_IDs": ["", ""]
         })
     }
     print(lambda_handler(event, None))

@@ -217,18 +217,18 @@ if __name__ == "__main__":
     event = {
         "body": json.dumps({
             "nome": "Sergio Gabriel",
-             "cpf": "12345678901",
+             "cpf": "",
             "Usuario_Tipo": "customer",
             "telefone": "+5511234567890",
-            "email": "sergioadm120@gmail.com",
-            "senha": "MinhaSenha123#",
-            "cep": "08583620",
+            "email": "",
+            "senha": "",
+            "cep": "",
             "logradouro": "Rua das Flores",
             "numero": "12",
             "complemento": "Apto 102",
             "nome_Loja": "loja do sergio",
             "descricao_Loja": "descricao da loja do sergio",
-            "id_Imagem": "https://us-east-2.console.aws.amazon.com/s3/object/loja-profile-pictures?region=us-east-2&bucketType=general&prefix=37dc297e-527b-4744-8f00-95a3bb4d25dd.jpg",
+            "id_Imagem": "",
             "tipo_Entrega": "entrega feita por mim"
         })
     }
